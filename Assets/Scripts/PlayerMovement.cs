@@ -16,6 +16,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Rigidbody2D rigidBody;
     [SerializeField] private float jumpForce = 6f;
 
+    // Ground check
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private float groundCheckRadius = 0.08f;
+    [SerializeField] private LayerMask groundLayer = ~0; // default to everything
+    private bool isGrounded;
+
     void Start()
     {
         // Auto-assign rigidBody if not set in Inspector
@@ -66,33 +72,58 @@ public class PlayerMovement : MonoBehaviour
         xPositionLastFrame = transform.position.x;
         currentInputX = 0f;
 
+        // If no groundCheck transform was provided, create one at the feet
+        if (groundCheck == null)
+        {
+            GameObject gc = new GameObject("GroundCheck");
+            gc.transform.parent = transform;
+            // place just below the sprite
+            float feetOffset = -(spriteRenderer.bounds.extents.y + 0.05f);
+            gc.transform.localPosition = new Vector3(0f, feetOffset, 0f);
+            groundCheck = gc.transform;
+        }
+
         Debug.Log($"Player half-width: {playerHalfWidth}");
         Debug.Log($"Left bound: {leftBound}, Right bound: {rightBound}");
     }
 
     void Update()
     {
+        CheckGrounded();
         HandleMovement();
         ClampMovement();
         FlipCharacterX();
         HandleJump();
     }
 
+    private void CheckGrounded()
+    {
+        if (groundCheck == null)
+        {
+            isGrounded = false;
+            return;
+        }
+
+        // Check overlap circle for any collider on the ground layer
+        Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        isGrounded = (hit != null);
+    }
+
     private void HandleJump()
     {
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
         // New Input System - Check for jump input
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (isGrounded && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             Jump();
         }
-        else if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+        else if (isGrounded && Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
         {
             Jump(); // A button on Xbox, X on PlayStation, B on Switch
         }
 #else
         // Legacy Input System
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
         {
             Jump();
         }
@@ -104,6 +135,8 @@ public class PlayerMovement : MonoBehaviour
         if (rigidBody != null)
         {
             rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            // Immediately mark as not grounded to avoid double-jump within the same frame
+            isGrounded = false;
             Debug.Log("Jump executed!");
         }
         else
@@ -114,6 +147,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleMovement()
     {
+        // Reset movement each frame to avoid accumulation
+        movement = Vector2.zero;
+
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
         // New Input System
         Vector2 inputVector = Vector2.zero;
@@ -138,14 +174,14 @@ public class PlayerMovement : MonoBehaviour
         currentInputX = input;
 #endif
 
-        transform.Translate(movement);
+        transform.Translate(new Vector3(movement.x, 0f, 0f));
     }
 
     private void ClampMovement()
     {
         // Clamp the player's position to screen bounds (accounting for player width)
         float clampedX = Mathf.Clamp(transform.position.x, leftBound, rightBound);
-        Vector2 pos = transform.position;
+        Vector3 pos = transform.position;
         pos.x = clampedX;
         transform.position = pos;
     }
@@ -167,5 +203,13 @@ public class PlayerMovement : MonoBehaviour
 
         // Update the last frame position
         xPositionLastFrame = transform.position.x;
+    }
+
+    // Visualize ground check in the editor
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheck == null) return;
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
 }
