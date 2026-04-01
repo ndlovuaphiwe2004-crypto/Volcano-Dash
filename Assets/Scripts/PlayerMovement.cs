@@ -12,8 +12,24 @@ public class PlayerMovement : MonoBehaviour
     private float xPositionLastFrame;
     private float currentInputX;
 
+    // For player to jump
+    [SerializeField] private Rigidbody2D rigidBody;
+    [SerializeField] private float jumpForce = 6f;
+
     void Start()
     {
+        // Auto-assign rigidBody if not set in Inspector
+        if (rigidBody == null)
+        {
+            rigidBody = GetComponent<Rigidbody2D>();
+
+            if (rigidBody == null)
+            {
+                Debug.LogError("No Rigidbody2D found on this GameObject! Please assign one in the Inspector or add a Rigidbody2D component.");
+                return;
+            }
+        }
+
         // Auto-assign spriteRenderer if not set in Inspector
         if (spriteRenderer == null)
         {
@@ -59,6 +75,41 @@ public class PlayerMovement : MonoBehaviour
         HandleMovement();
         ClampMovement();
         FlipCharacterX();
+        HandleJump();
+    }
+
+    private void HandleJump()
+    {
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+        // New Input System - Check for jump input
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            Jump();
+        }
+        else if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+        {
+            Jump(); // A button on Xbox, X on PlayStation, B on Switch
+        }
+#else
+        // Legacy Input System
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Jump();
+        }
+#endif
+    }
+
+    private void Jump()
+    {
+        if (rigidBody != null)
+        {
+            rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            Debug.Log("Jump executed!");
+        }
+        else
+        {
+            Debug.LogError("Rigidbody2D is missing! Cannot jump.");
+        }
     }
 
     private void HandleMovement()
