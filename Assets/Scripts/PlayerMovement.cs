@@ -16,6 +16,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Rigidbody2D rigidBody;
     [SerializeField] private float jumpForce = 6f;
 
+    // Double-jump config
+    [SerializeField] private int maxJumps = 2; // 1 = single jump, 2 = double jump
+    private int jumpsRemaining;
+
     // Ground check
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.08f;
@@ -83,6 +87,9 @@ public class PlayerMovement : MonoBehaviour
             groundCheck = gc.transform;
         }
 
+        // Initialize jumps
+        jumpsRemaining = maxJumps;
+
         Debug.Log($"Player half-width: {playerHalfWidth}");
         Debug.Log($"Left bound: {leftBound}, Right bound: {rightBound}");
     }
@@ -106,38 +113,58 @@ public class PlayerMovement : MonoBehaviour
 
         // Check overlap circle for any collider on the ground layer
         Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        bool wasGrounded = isGrounded;
         isGrounded = (hit != null);
+
+        // Reset jumps when landing
+        if (isGrounded && !wasGrounded)
+        {
+            jumpsRemaining = maxJumps;
+        }
+        // Also ensure if continuously grounded we keep jumps reset
+        if (isGrounded)
+        {
+            jumpsRemaining = maxJumps;
+        }
     }
 
     private void HandleJump()
     {
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
         // New Input System - Check for jump input
-        if (isGrounded && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+        bool jumpPressed = false;
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) jumpPressed = true;
+        if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame) jumpPressed = true;
+
+        if (jumpPressed)
         {
-            Jump();
-        }
-        else if (isGrounded && Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
-        {
-            Jump(); // A button on Xbox, X on PlayStation, B on Switch
+            TryJump();
         }
 #else
         // Legacy Input System
-        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            Jump();
+            TryJump();
         }
 #endif
     }
 
-    private void Jump()
+    private void TryJump()
     {
+        if (jumpsRemaining <= 0) return;
+
         if (rigidBody != null)
         {
+            // Reset vertical velocity for consistent jump height
+            Vector2 v = rigidBody.linearVelocity;
+            v.y = 0f;
+            rigidBody.linearVelocity = v;
+
             rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            // Immediately mark as not grounded to avoid double-jump within the same frame
-            isGrounded = false;
-            Debug.Log("Jump executed!");
+
+            jumpsRemaining--;
+            isGrounded = false; // avoid re-triggering ground logic the same frame
+            Debug.Log($"Jump executed! Jumps remaining: {jumpsRemaining}");
         }
         else
         {
