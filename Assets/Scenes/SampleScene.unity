@@ -559,7 +559,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f153acc757dd6a4aa028a31f74d524c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  speed: 5
+  speed: 8.5
+  spriteRenderer: {fileID: 0}
 --- !u!1001 &8726406939152679470
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -570,11 +571,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -7.63
+      value: -6.94
       objectReference: {fileID: 0}
     - target: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.95
+      value: -3.01
       objectReference: {fileID: 0}
     - target: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -611,6 +612,10 @@ PrefabInstance:
     - target: {fileID: 4975315464822548847, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_Name
       value: Updated Ember Character_0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5380090151163062615, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
+      propertyPath: m_FlipX
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
