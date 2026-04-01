@@ -225,7 +225,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 8
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -250,7 +250,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -2.17, z: -10}
+  m_LocalPosition: {x: 6.08, y: -4.52, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -392,17 +392,17 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.031004429, y: 0}
+  m_Offset: {x: -0.009821415, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
     oldSize: {x: 1.8, y: 1.4}
-    newSize: {x: 31.3, y: 1.4}
+    newSize: {x: 31.04, y: 1.4}
     adaptiveTilingThreshold: 0.5
     drawMode: 2
-    adaptiveTiling: 0
+    adaptiveTiling: 1
   m_AutoTiling: 0
-  m_Size: {x: 31.3609, y: 1.4}
+  m_Size: {x: 30.081787, y: 1.4}
   m_EdgeRadius: 0
 --- !u!212 &2124113219
 SpriteRenderer:
@@ -458,9 +458,9 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 2
-  m_Size: {x: 31.3, y: 1.4}
+  m_Size: {x: 31.04, y: 1.4}
   m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
+  m_SpriteTileMode: 1
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
 --- !u!4 &2124113220
@@ -472,7 +472,7 @@ Transform:
   m_GameObject: {fileID: 2124113217}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.71, y: -6.53, z: 0}
+  m_LocalPosition: {x: 6.04, y: -6.42, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -559,6 +559,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f153acc757dd6a4aa028a31f74d524c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  speed: 5
 --- !u!1001 &8726406939152679470
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -569,15 +570,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.48260382
+      value: -7.63
       objectReference: {fileID: 0}
     - target: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.5252538
+      value: -2.95
       objectReference: {fileID: 0}
     - target: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -0.01
       objectReference: {fileID: 0}
     - target: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       propertyPath: m_LocalRotation.w
