@@ -3,20 +3,35 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public float speed = 5f;
+    private Vector2 movement;
+    private float leftBound;
+    private float rightBound;
+    private float playerHalfWidth;
+
     void Start()
     {
+        // Get the camera's boundaries in world space
+        Camera mainCamera = Camera.main;
 
+        // Get the world position of the left and right edges of the screen
+        Vector2 leftEdge = mainCamera.ScreenToWorldPoint(new Vector2(0, 0));
+        Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
+
+        // Get the player's half-width from the sprite renderer
+        playerHalfWidth = GetComponent<SpriteRenderer>().bounds.extents.x;
+
+        // Set bounds accounting for player width
+        leftBound = leftEdge.x + playerHalfWidth;
+        rightBound = rightEdge.x - playerHalfWidth;
+
+        print($"Player half-width: {playerHalfWidth}");
+        print($"Left bound: {leftBound}, Right bound: {rightBound}");
     }
-    public float speed = 5f; // Speed of the player movement
 
-    private Vector2 movement;
-
-    // Update is called once per frame
     void Update()
     {
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-        // New Input System: prefer gamepad left stick, fallback to keyboard A/D or arrows
         Vector2 inputVector = Vector2.zero;
 
         if (Gamepad.current != null)
@@ -32,11 +47,16 @@ public class PlayerMovement : MonoBehaviour
 
         movement.x = inputVector.x * speed * Time.deltaTime;
 #else
-        // Legacy Input Manager
         float input = Input.GetAxis("Horizontal");
         movement.x = input * speed * Time.deltaTime;
 #endif
 
         transform.Translate(movement);
+
+        // Clamp the player's position to screen bounds (accounting for player width)
+        float clampedX = Mathf.Clamp(transform.position.x, leftBound, rightBound);
+        Vector2 pos = transform.position;
+        pos.x = clampedX;
+        transform.position = pos;
     }
 }
