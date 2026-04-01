@@ -547,6 +547,18 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &2136024044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2136024039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f153acc757dd6a4aa028a31f74d524c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
 --- !u!1001 &8726406939152679470
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -609,6 +621,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4975315464822548847, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2136024040}
+    - targetCorrespondingSourceObject: {fileID: 4975315464822548847, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2136024044}
   m_SourcePrefab: {fileID: 100100000, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
