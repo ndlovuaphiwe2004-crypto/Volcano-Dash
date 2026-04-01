@@ -10,6 +10,7 @@ public class PlayerMovement : MonoBehaviour
     private float rightBound;
     private float playerHalfWidth;
     private float xPositionLastFrame;
+    private float currentInputX;
 
     void Start()
     {
@@ -47,6 +48,7 @@ public class PlayerMovement : MonoBehaviour
 
         // Initialize last frame position
         xPositionLastFrame = transform.position.x;
+        currentInputX = 0f;
 
         Debug.Log($"Player half-width: {playerHalfWidth}");
         Debug.Log($"Left bound: {leftBound}, Right bound: {rightBound}");
@@ -77,10 +79,12 @@ public class PlayerMovement : MonoBehaviour
         }
 
         movement.x = inputVector.x * speed * Time.deltaTime;
+        currentInputX = inputVector.x;
 #else
         // Legacy Input System
         float input = Input.GetAxis("Horizontal");
         movement.x = input * speed * Time.deltaTime;
+        currentInputX = input;
 #endif
 
         transform.Translate(movement);
@@ -100,12 +104,12 @@ public class PlayerMovement : MonoBehaviour
         // Skip flipping if spriteRenderer is missing
         if (spriteRenderer == null) return;
 
-        // Flip the character based on movement direction
-        if (transform.position.x > xPositionLastFrame)
+        // Flip the character based on movement direction using stored input value
+        if (currentInputX > 0)
         {
             spriteRenderer.flipX = false; // Facing right
         }
-        else if (transform.position.x < xPositionLastFrame)
+        else if (currentInputX < 0)
         {
             spriteRenderer.flipX = true; // Facing left
         }
