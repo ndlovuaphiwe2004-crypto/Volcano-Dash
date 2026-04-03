@@ -17,81 +17,70 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float jumpForce = 6f;
 
     // Double-jump config
-    [SerializeField] private int maxJumps = 2; // 1 = single jump, 2 = double jump
+    [SerializeField] private int maxJumps = 2;
     private int jumpsRemaining;
+
+    // Jump timing restrictions - THIS FIXES THE FLYING ISSUE
+    private bool canDoubleJump = true;
+    private float lastJumpTime = 0f;
+    [SerializeField] private float doubleJumpDelay = 0.2f; // Wait 0.2 seconds before allowing double jump
 
     // Ground check
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.08f;
-    [SerializeField] private LayerMask groundLayer = ~0; // default to everything
+    [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
 
     void Start()
     {
-        // Auto-assign rigidBody if not set in Inspector
         if (rigidBody == null)
         {
             rigidBody = GetComponent<Rigidbody2D>();
-
             if (rigidBody == null)
             {
-                Debug.LogError("No Rigidbody2D found on this GameObject! Please assign one in the Inspector or add a Rigidbody2D component.");
+                Debug.LogError("No Rigidbody2D found!");
                 return;
             }
         }
 
-        // Auto-assign spriteRenderer if not set in Inspector
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
-
             if (spriteRenderer == null)
             {
-                Debug.LogError("No SpriteRenderer found on this GameObject! Please assign one in the Inspector or add a SpriteRenderer component.");
+                Debug.LogError("No SpriteRenderer found!");
                 return;
             }
         }
 
-        // Get the camera's boundaries in world space
         Camera mainCamera = Camera.main;
-
         if (mainCamera == null)
         {
-            Debug.LogError("No main camera found in the scene!");
+            Debug.LogError("No main camera found!");
             return;
         }
 
-        // Get the world position of the left and right edges of the screen
         Vector2 leftEdge = mainCamera.ScreenToWorldPoint(new Vector2(0, 0));
         Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
 
-        // Get the player's half-width from the sprite renderer
         playerHalfWidth = spriteRenderer.bounds.extents.x;
-
-        // Set bounds accounting for player width
         leftBound = leftEdge.x + playerHalfWidth;
         rightBound = rightEdge.x - playerHalfWidth;
 
-        // Initialize last frame position
         xPositionLastFrame = transform.position.x;
         currentInputX = 0f;
 
-        // If no groundCheck transform was provided, create one at the feet
         if (groundCheck == null)
         {
             GameObject gc = new GameObject("GroundCheck");
             gc.transform.parent = transform;
-            // place just below the sprite
             float feetOffset = -(spriteRenderer.bounds.extents.y + 0.05f);
             gc.transform.localPosition = new Vector3(0f, feetOffset, 0f);
             groundCheck = gc.transform;
         }
 
-        // Initialize jumps
         jumpsRemaining = maxJumps;
-
-        Debug.Log($"Player half-width: {playerHalfWidth}");
-        Debug.Log($"Left bound: {leftBound}, Right bound: {rightBound}");
+        canDoubleJump = true;
     }
 
     void Update()
@@ -111,27 +100,29 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // Check overlap circle for any collider on the ground layer
         Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         bool wasGrounded = isGrounded;
         isGrounded = (hit != null);
 
-        // Reset jumps when landing
+        // Reset when landing
         if (isGrounded && !wasGrounded)
         {
             jumpsRemaining = maxJumps;
+            canDoubleJump = true; // Reset double jump ability on landing
+            Debug.Log("Landed! Jumps reset");
         }
-        // Also ensure if continuously grounded we keep jumps reset
+
+        // If on ground, always reset jump abilities
         if (isGrounded)
         {
             jumpsRemaining = maxJumps;
+            canDoubleJump = true;
         }
     }
 
     private void HandleJump()
     {
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-        // New Input System - Check for jump input
         bool jumpPressed = false;
         if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) jumpPressed = true;
         if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame) jumpPressed = true;
@@ -141,7 +132,6 @@ public class PlayerMovement : MonoBehaviour
             TryJump();
         }
 #else
-        // Legacy Input System
         if (Input.GetKeyDown(KeyCode.Space))
         {
             TryJump();
@@ -151,34 +141,49 @@ public class PlayerMovement : MonoBehaviour
 
     private void TryJump()
     {
-        if (jumpsRemaining <= 0) return;
-
-        if (rigidBody != null)
+        // GROUND JUMP
+        if (isGrounded)
         {
-            // Reset vertical velocity for consistent jump height
-            Vector2 v = rigidBody.linearVelocity;
-            v.y = 0f;
-            rigidBody.linearVelocity = v;
+            PerformJump();
+            jumpsRemaining = maxJumps - 1; // After ground jump, remaining jumps = max-1
+            lastJumpTime = Time.time;
+            Debug.Log("Ground jump!");
+            return;
+        }
 
-            rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-
+        // DOUBLE JUMP - Only allow if we have jumps remaining AND enough time has passed since last jump
+        if (jumpsRemaining > 0 && canDoubleJump && (Time.time - lastJumpTime) >= doubleJumpDelay)
+        {
+            PerformJump();
             jumpsRemaining--;
-            isGrounded = false; // avoid re-triggering ground logic the same frame
-            Debug.Log($"Jump executed! Jumps remaining: {jumpsRemaining}");
+            canDoubleJump = false; // Prevent multiple double jumps
+            Debug.Log($"Double jump! Jumps remaining: {jumpsRemaining}");
         }
-        else
+        else if (jumpsRemaining > 0 && (Time.time - lastJumpTime) < doubleJumpDelay)
         {
-            Debug.LogError("Rigidbody2D is missing! Cannot jump.");
+            Debug.Log($"Jump too soon! Wait {doubleJumpDelay - (Time.time - lastJumpTime)} more seconds");
         }
+    }
+
+    private void PerformJump()
+    {
+        if (rigidBody == null) return;
+
+        // Reset vertical velocity
+        Vector2 v = rigidBody.linearVelocity;
+        v.y = 0f;
+        rigidBody.linearVelocity = v;
+
+        // Apply jump force
+        rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        isGrounded = false;
     }
 
     private void HandleMovement()
     {
-        // Reset movement each frame to avoid accumulation
         movement = Vector2.zero;
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-        // New Input System
         Vector2 inputVector = Vector2.zero;
 
         if (Gamepad.current != null)
@@ -195,7 +200,6 @@ public class PlayerMovement : MonoBehaviour
         movement.x = inputVector.x * speed * Time.deltaTime;
         currentInputX = inputVector.x;
 #else
-        // Legacy Input System
         float input = Input.GetAxis("Horizontal");
         movement.x = input * speed * Time.deltaTime;
         currentInputX = input;
@@ -206,7 +210,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void ClampMovement()
     {
-        // Clamp the player's position to screen bounds (accounting for player width)
         float clampedX = Mathf.Clamp(transform.position.x, leftBound, rightBound);
         Vector3 pos = transform.position;
         pos.x = clampedX;
@@ -215,24 +218,18 @@ public class PlayerMovement : MonoBehaviour
 
     private void FlipCharacterX()
     {
-        // Skip flipping if spriteRenderer is missing
         if (spriteRenderer == null) return;
 
-        // Flip the character based on movement direction using stored input value
         if (currentInputX > 0)
         {
-            spriteRenderer.flipX = false; // Facing right
+            spriteRenderer.flipX = false;
         }
         else if (currentInputX < 0)
         {
-            spriteRenderer.flipX = true; // Facing left
+            spriteRenderer.flipX = true;
         }
-
-        // Update the last frame position
-        xPositionLastFrame = transform.position.x;
     }
 
-    // Visualize ground check in the editor
     private void OnDrawGizmosSelected()
     {
         if (groundCheck == null) return;
