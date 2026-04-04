@@ -14,22 +14,21 @@ public class PlayerMovement : MonoBehaviour
 
     // For player to jump
     [SerializeField] private Rigidbody2D rigidBody;
-    [SerializeField] private float jumpForce = 6f;
+    [SerializeField] private float jumpForce = 8f; // Increased for better height
+    [SerializeField] private float doubleJumpForce = 7f; // Slightly less than ground jump
 
     // Double-jump config
     [SerializeField] private int maxJumps = 2;
     private int jumpsRemaining;
-
-    // Jump timing restrictions - THIS FIXES THE FLYING ISSUE
-    private bool canDoubleJump = true;
-    private float lastJumpTime = 0f;
-    [SerializeField] private float doubleJumpDelay = 0.2f; // Wait 0.2 seconds before allowing double jump
 
     // Ground check
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.08f;
     [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
+
+    // For jump input buffering
+    private bool jumpRequested = false;
 
     void Start()
     {
@@ -80,16 +79,25 @@ public class PlayerMovement : MonoBehaviour
         }
 
         jumpsRemaining = maxJumps;
-        canDoubleJump = true;
     }
 
     void Update()
     {
         CheckGrounded();
+        HandleJumpInput();
         HandleMovement();
         ClampMovement();
         FlipCharacterX();
-        HandleJump();
+    }
+
+    void FixedUpdate()
+    {
+        // Handle physics-based jumping in FixedUpdate for consistency
+        if (jumpRequested)
+        {
+            PerformJump();
+            jumpRequested = false;
+        }
     }
 
     private void CheckGrounded()
@@ -104,23 +112,15 @@ public class PlayerMovement : MonoBehaviour
         bool wasGrounded = isGrounded;
         isGrounded = (hit != null);
 
-        // Reset when landing
+        // Reset jumps when landing
         if (isGrounded && !wasGrounded)
         {
             jumpsRemaining = maxJumps;
-            canDoubleJump = true; // Reset double jump ability on landing
-            Debug.Log("Landed! Jumps reset");
-        }
-
-        // If on ground, always reset jump abilities
-        if (isGrounded)
-        {
-            jumpsRemaining = maxJumps;
-            canDoubleJump = true;
+            Debug.Log($"Landed! Jumps reset to: {jumpsRemaining}");
         }
     }
 
-    private void HandleJump()
+    private void HandleJumpInput()
     {
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
         bool jumpPressed = false;
@@ -129,39 +129,26 @@ public class PlayerMovement : MonoBehaviour
 
         if (jumpPressed)
         {
-            TryJump();
+            RequestJump();
         }
 #else
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            TryJump();
+            RequestJump();
         }
 #endif
     }
 
-    private void TryJump()
+    private void RequestJump()
     {
-        // GROUND JUMP
-        if (isGrounded)
+        // Check if we can jump
+        if (isGrounded || jumpsRemaining > 0)
         {
-            PerformJump();
-            jumpsRemaining = maxJumps - 1; // After ground jump, remaining jumps = max-1
-            lastJumpTime = Time.time;
-            Debug.Log("Ground jump!");
-            return;
+            jumpRequested = true;
         }
-
-        // DOUBLE JUMP - Only allow if we have jumps remaining AND enough time has passed since last jump
-        if (jumpsRemaining > 0 && canDoubleJump && (Time.time - lastJumpTime) >= doubleJumpDelay)
+        else
         {
-            PerformJump();
-            jumpsRemaining--;
-            canDoubleJump = false; // Prevent multiple double jumps
-            Debug.Log($"Double jump! Jumps remaining: {jumpsRemaining}");
-        }
-        else if (jumpsRemaining > 0 && (Time.time - lastJumpTime) < doubleJumpDelay)
-        {
-            Debug.Log($"Jump too soon! Wait {doubleJumpDelay - (Time.time - lastJumpTime)} more seconds");
+            Debug.Log($"Can't jump! Grounded: {isGrounded}, Jumps left: {jumpsRemaining}");
         }
     }
 
@@ -169,14 +156,39 @@ public class PlayerMovement : MonoBehaviour
     {
         if (rigidBody == null) return;
 
-        // Reset vertical velocity
+        // Different jump force for ground vs air jumps
+        float currentJumpForce = isGrounded ? jumpForce : doubleJumpForce;
+
+        // Don't reset vertical velocity completely - just cap it if going down
         Vector2 v = rigidBody.linearVelocity;
-        v.y = 0f;
+        if (v.y < 0)
+        {
+            v.y = 0f; // Only reset if falling
+        }
         rigidBody.linearVelocity = v;
 
         // Apply jump force
-        rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-        isGrounded = false;
+        rigidBody.AddForce(Vector2.up * currentJumpForce, ForceMode2D.Impulse);
+
+        // Decrement jumps if in air
+        if (!isGrounded)
+        {
+            jumpsRemaining--;
+            Debug.Log($"Double jump! Jumps remaining: {jumpsRemaining}");
+        }
+        else
+        {
+            jumpsRemaining = maxJumps - 1;
+            Debug.Log($"Ground jump! Jumps remaining: {jumpsRemaining}");
+        }
+
+        // Small cooldown to prevent frame-perfect double inputs
+        Invoke(nameof(ResetJumpRequest), 0.05f);
+    }
+
+    private void ResetJumpRequest()
+    {
+        jumpRequested = false;
     }
 
     private void HandleMovement()
