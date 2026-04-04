@@ -1,8 +1,10 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 public class PlayerMovement : MonoBehaviour
 {
+    [Header("Movement Settings")]
     [SerializeField] private float speed = 5f;
     [SerializeField] private SpriteRenderer spriteRenderer;
     private Vector2 movement;
@@ -12,26 +14,35 @@ public class PlayerMovement : MonoBehaviour
     private float xPositionLastFrame;
     private float currentInputX;
 
-    // For player to jump
+    [Header("Jump Settings")]
     [SerializeField] private Rigidbody2D rigidBody;
-    [SerializeField] private float jumpForce = 8f; // Increased for better height
-    [SerializeField] private float doubleJumpForce = 7f; // Slightly less than ground jump
-
-    // Double-jump config
+    [SerializeField] private float jumpForce = 8f;
+    [SerializeField] private float doubleJumpForce = 7f;
     [SerializeField] private int maxJumps = 2;
     private int jumpsRemaining;
 
-    // Ground check
+    [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.08f;
     [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
+
+    [Header("Dash Settings")]
+    [SerializeField] private bool enableDash = true;
+    [SerializeField] private float dashingPower = 24f;
+    [SerializeField] private float dashingTime = 0.2f;
+    [SerializeField] private float dashingCooldown = 1f;
+    [SerializeField] private TrailRenderer trailRenderer;
+
+    private bool canDash = true;
+    private bool isDashing;
 
     // For jump input buffering
     private bool jumpRequested = false;
 
     void Start()
     {
+        // Rigidbody setup
         if (rigidBody == null)
         {
             rigidBody = GetComponent<Rigidbody2D>();
@@ -42,6 +53,7 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
+        // SpriteRenderer setup
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
@@ -52,6 +64,13 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
+        // TrailRenderer setup (optional)
+        if (trailRenderer == null)
+        {
+            trailRenderer = GetComponent<TrailRenderer>();
+        }
+
+        // Camera bounds setup
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
         {
@@ -69,6 +88,7 @@ public class PlayerMovement : MonoBehaviour
         xPositionLastFrame = transform.position.x;
         currentInputX = 0f;
 
+        // Ground check setup
         if (groundCheck == null)
         {
             GameObject gc = new GameObject("GroundCheck");
@@ -83,8 +103,17 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // Don't allow input while dashing (except movement)
+        if (isDashing)
+        {
+            // Still allow screen clamping while dashing
+            ClampMovement();
+            return;
+        }
+
         CheckGrounded();
         HandleJumpInput();
+        HandleDashInput();
         HandleMovement();
         ClampMovement();
         FlipCharacterX();
@@ -116,6 +145,7 @@ public class PlayerMovement : MonoBehaviour
         if (isGrounded && !wasGrounded)
         {
             jumpsRemaining = maxJumps;
+            canDash = true; // Reset dash on landing
             Debug.Log($"Landed! Jumps reset to: {jumpsRemaining}");
         }
     }
@@ -139,16 +169,37 @@ public class PlayerMovement : MonoBehaviour
 #endif
     }
 
+    private void HandleDashInput()
+    {
+        if (!enableDash) return;
+
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+        bool dashPressed = false;
+        if (Keyboard.current != null && Keyboard.current.leftShiftKey.wasPressedThisFrame) dashPressed = true;
+        if (Gamepad.current != null && Gamepad.current.buttonWest.wasPressedThisFrame) dashPressed = true; // X button on Xbox, Square on PS
+
+        if (dashPressed && canDash && !isDashing)
+        {
+            StartCoroutine(Dash());
+        }
+#else
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash && !isDashing)
+        {
+            StartCoroutine(Dash());
+        }
+#endif
+    }
+
     private void RequestJump()
     {
-        // Check if we can jump
-        if (isGrounded || jumpsRemaining > 0)
+        // Check if we can jump (don't allow jumping while dashing)
+        if (!isDashing && (isGrounded || jumpsRemaining > 0))
         {
             jumpRequested = true;
         }
         else
         {
-            Debug.Log($"Can't jump! Grounded: {isGrounded}, Jumps left: {jumpsRemaining}");
+            Debug.Log($"Can't jump! Grounded: {isGrounded}, Jumps left: {jumpsRemaining}, Dashing: {isDashing}");
         }
     }
 
@@ -186,6 +237,47 @@ public class PlayerMovement : MonoBehaviour
         Invoke(nameof(ResetJumpRequest), 0.05f);
     }
 
+    private IEnumerator Dash()
+    {
+        canDash = false;
+        isDashing = true;
+
+        // Store original gravity scale
+        float originalGravity = rigidBody.gravityScale;
+        rigidBody.gravityScale = 0f;
+
+        // Apply dash force in the direction the player is facing
+        float dashDirection = spriteRenderer.flipX ? -1f : 1f;
+        rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
+
+        // Enable trail renderer if assigned
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = true;
+        }
+
+        Debug.Log("Dash started!");
+
+        // Wait for dash duration
+        yield return new WaitForSeconds(dashingTime);
+
+        // Disable trail renderer
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = false;
+        }
+
+        // Restore gravity
+        rigidBody.gravityScale = originalGravity;
+        isDashing = false;
+
+        Debug.Log("Dash ended!");
+
+        // Wait for cooldown before allowing another dash
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
+    }
+
     private void ResetJumpRequest()
     {
         jumpRequested = false;
@@ -217,7 +309,11 @@ public class PlayerMovement : MonoBehaviour
         currentInputX = input;
 #endif
 
-        transform.Translate(new Vector3(movement.x, 0f, 0f));
+        // Only apply movement if not dashing
+        if (!isDashing)
+        {
+            transform.Translate(new Vector3(movement.x, 0f, 0f));
+        }
     }
 
     private void ClampMovement()
@@ -232,6 +328,9 @@ public class PlayerMovement : MonoBehaviour
     {
         if (spriteRenderer == null) return;
 
+        // Don't flip while dashing to maintain direction
+        if (isDashing) return;
+
         if (currentInputX > 0)
         {
             spriteRenderer.flipX = false;
@@ -240,6 +339,18 @@ public class PlayerMovement : MonoBehaviour
         {
             spriteRenderer.flipX = true;
         }
+    }
+
+    // Public method to check if player is dashing (for other scripts)
+    public bool IsDashing()
+    {
+        return isDashing;
+    }
+
+    // Public method to check if player is grounded (for other scripts)
+    public bool IsGrounded()
+    {
+        return isGrounded;
     }
 
     private void OnDrawGizmosSelected()
