@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 public class PlayerMovement : MonoBehaviour
 {
-    [SerializeField] private float speed = 5f;
+    [Header("Movement Settings")]
+    [SerializeField] private float speed = 10f;
     [SerializeField] private SpriteRenderer spriteRenderer;
     private Vector2 movement;
     private float leftBound;
@@ -12,26 +14,36 @@ public class PlayerMovement : MonoBehaviour
     private float xPositionLastFrame;
     private float currentInputX;
 
-    // For player to jump
+    [Header("Jump Settings")]
     [SerializeField] private Rigidbody2D rigidBody;
-    [SerializeField] private float jumpForce = 8f; // Increased for better height
-    [SerializeField] private float doubleJumpForce = 7f; // Slightly less than ground jump
-
-    // Double-jump config
+    [SerializeField] private float jumpForce = 8f;
+    [SerializeField] private float doubleJumpForce = 7f;
     [SerializeField] private int maxJumps = 2;
     private int jumpsRemaining;
 
-    // Ground check
+    [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.08f;
     [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
+
+    [Header("Dash Settings")]
+    [SerializeField] private bool enableDash = true;
+    [SerializeField] private float dashingPower = 24f;
+    [SerializeField] private float dashingCooldown = 0.5f; // Reduced cooldown for better feel
+    [SerializeField] private TrailRenderer trailRenderer;
+
+    private bool canDash = true;
+    private bool isDashing;
+    private float dashDirection = 1f;
+    private float originalGravity;
 
     // For jump input buffering
     private bool jumpRequested = false;
 
     void Start()
     {
+        // Rigidbody setup
         if (rigidBody == null)
         {
             rigidBody = GetComponent<Rigidbody2D>();
@@ -42,6 +54,13 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
+        // Store original gravity
+        originalGravity = rigidBody.gravityScale;
+
+        // Configure Rigidbody2D for better dash performance
+        rigidBody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+
+        // SpriteRenderer setup
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
@@ -52,6 +71,13 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
+        // TrailRenderer setup (optional)
+        if (trailRenderer == null)
+        {
+            trailRenderer = GetComponent<TrailRenderer>();
+        }
+
+        // Camera bounds setup
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
         {
@@ -69,6 +95,7 @@ public class PlayerMovement : MonoBehaviour
         xPositionLastFrame = transform.position.x;
         currentInputX = 0f;
 
+        // Ground check setup
         if (groundCheck == null)
         {
             GameObject gc = new GameObject("GroundCheck");
@@ -84,19 +111,35 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         CheckGrounded();
-        HandleJumpInput();
-        HandleMovement();
+
+        // Handle dash input FIRST - this determines if we're dashing
+        HandleDashInput();
+
+        // Only handle other inputs if not dashing
+        if (!isDashing)
+        {
+            HandleJumpInput();
+            HandleMovement();
+            FlipCharacterX();
+        }
+
         ClampMovement();
-        FlipCharacterX();
     }
 
     void FixedUpdate()
     {
-        // Handle physics-based jumping in FixedUpdate for consistency
+        // Handle physics-based jumping
         if (jumpRequested)
         {
             PerformJump();
             jumpRequested = false;
+        }
+
+        // Apply dash movement while dashing
+        if (isDashing)
+        {
+            // Constantly apply dash velocity every frame while dashing
+            rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
         }
     }
 
@@ -112,7 +155,6 @@ public class PlayerMovement : MonoBehaviour
         bool wasGrounded = isGrounded;
         isGrounded = (hit != null);
 
-        // Reset jumps when landing
         if (isGrounded && !wasGrounded)
         {
             jumpsRemaining = maxJumps;
@@ -139,16 +181,109 @@ public class PlayerMovement : MonoBehaviour
 #endif
     }
 
+    private void HandleDashInput()
+    {
+        if (!enableDash) return;
+
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+        // Check if dash key is currently being held
+        bool dashHeld = false;
+        if (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed) dashHeld = true;
+        if (Gamepad.current != null && Gamepad.current.buttonWest.isPressed) dashHeld = true;
+
+        // START DASH: Key is held AND we can dash AND not already dashing
+        if (dashHeld && canDash && !isDashing)
+        {
+            StartDash();
+        }
+
+        // STOP DASH: Key is released AND we are currently dashing
+        if (!dashHeld && isDashing)
+        {
+            StopDash();
+        }
+#else
+        // Legacy Input System
+        bool shiftHeld = Input.GetKey(KeyCode.LeftShift);
+        
+        // START DASH: Shift held AND can dash AND not dashing
+        if (shiftHeld && canDash && !isDashing)
+        {
+            StartDash();
+        }
+        
+        // STOP DASH: Shift released AND currently dashing
+        if (!shiftHeld && isDashing)
+        {
+            StopDash();
+        }
+#endif
+    }
+
+    private void StartDash()
+    {
+        isDashing = true;
+
+        // Set gravity to 0 during dash
+        rigidBody.gravityScale = 0f;
+
+        // Store dash direction based on player facing
+        dashDirection = spriteRenderer.flipX ? -1f : 1f;
+
+        // Apply dash force
+        rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
+
+        // Enable trail renderer if assigned
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = true;
+        }
+
+        Debug.Log("DASH ACTIVE - Holding Shift");
+    }
+
+    private void StopDash()
+    {
+        isDashing = false;
+
+        // Disable trail renderer
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = false;
+        }
+
+        // Restore gravity
+        rigidBody.gravityScale = originalGravity;
+
+        // Stop all momentum (optional - set to 0 for instant stop, or keep some velocity)
+        // Comment out the next line if you want to keep some momentum after dash
+        rigidBody.linearVelocity = new Vector2(0f, rigidBody.linearVelocity.y);
+
+        Debug.Log("DASH STOPPED - Shift released");
+
+        // Start cooldown
+        StartCoroutine(DashCooldown());
+    }
+
+    private IEnumerator DashCooldown()
+    {
+        canDash = false;
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
+        Debug.Log("Dash ready again!");
+    }
+
     private void RequestJump()
     {
-        // Check if we can jump
         if (isGrounded || jumpsRemaining > 0)
         {
             jumpRequested = true;
-        }
-        else
-        {
-            Debug.Log($"Can't jump! Grounded: {isGrounded}, Jumps left: {jumpsRemaining}");
+
+            // If dashing, stop dash on jump
+            if (isDashing)
+            {
+                StopDash();
+            }
         }
     }
 
@@ -156,21 +291,17 @@ public class PlayerMovement : MonoBehaviour
     {
         if (rigidBody == null) return;
 
-        // Different jump force for ground vs air jumps
         float currentJumpForce = isGrounded ? jumpForce : doubleJumpForce;
 
-        // Don't reset vertical velocity completely - just cap it if going down
         Vector2 v = rigidBody.linearVelocity;
         if (v.y < 0)
         {
-            v.y = 0f; // Only reset if falling
+            v.y = 0f;
         }
         rigidBody.linearVelocity = v;
 
-        // Apply jump force
         rigidBody.AddForce(Vector2.up * currentJumpForce, ForceMode2D.Impulse);
 
-        // Decrement jumps if in air
         if (!isGrounded)
         {
             jumpsRemaining--;
@@ -182,7 +313,6 @@ public class PlayerMovement : MonoBehaviour
             Debug.Log($"Ground jump! Jumps remaining: {jumpsRemaining}");
         }
 
-        // Small cooldown to prevent frame-perfect double inputs
         Invoke(nameof(ResetJumpRequest), 0.05f);
     }
 
@@ -199,9 +329,7 @@ public class PlayerMovement : MonoBehaviour
         Vector2 inputVector = Vector2.zero;
 
         if (Gamepad.current != null)
-        {
             inputVector = Gamepad.current.leftStick.ReadValue();
-        }
         else if (Keyboard.current != null)
         {
             float left = (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) ? -1f : 0f;
@@ -217,7 +345,11 @@ public class PlayerMovement : MonoBehaviour
         currentInputX = input;
 #endif
 
-        transform.Translate(new Vector3(movement.x, 0f, 0f));
+        // Only apply normal movement if not dashing
+        if (!isDashing)
+        {
+            transform.Translate(new Vector3(movement.x, 0f, 0f));
+        }
     }
 
     private void ClampMovement()
@@ -232,6 +364,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (spriteRenderer == null) return;
 
+        if (isDashing) return;
+
         if (currentInputX > 0)
         {
             spriteRenderer.flipX = false;
@@ -240,6 +374,16 @@ public class PlayerMovement : MonoBehaviour
         {
             spriteRenderer.flipX = true;
         }
+    }
+
+    public bool IsDashing()
+    {
+        return isDashing;
+    }
+
+    public bool IsGrounded()
+    {
+        return isGrounded;
     }
 
     private void OnDrawGizmosSelected()
