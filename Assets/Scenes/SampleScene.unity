@@ -33980,7 +33980,7 @@ GameObject:
   - component: {fileID: 1489791911}
   - component: {fileID: 1489791910}
   - component: {fileID: 1489791913}
-  - component: {fileID: 1489791912}
+  - component: {fileID: 1489791914}
   m_Layer: 0
   m_Name: Moving Platform_0
   m_TagString: Untagged
@@ -34062,23 +34062,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1489791912
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1489791909}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35fb8841582d1bc4d9c4a2b0a5782caf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloudsMovement
-  speed: 5
-  startingPoint: 0
-  points:
-  - {fileID: 200713521}
-  - {fileID: 1640166230}
 --- !u!61 &1489791913
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -34125,6 +34108,23 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 11.0625, y: 3.1875}
   m_EdgeRadius: 0
+--- !u!114 &1489791914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1489791909}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dc62208d5d48ea4783dcc33e40aefba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MovingPlatformer
+  speed: 5
+  startingPoint: 0
+  points:
+  - {fileID: 200713521}
+  - {fileID: 1640166230}
 --- !u!1 &1512166350
 GameObject:
   m_ObjectHideFlags: 0
