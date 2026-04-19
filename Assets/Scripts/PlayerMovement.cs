@@ -30,7 +30,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Dash Settings")]
     [SerializeField] private bool enableDash = true;
     [SerializeField] private float dashingPower = 24f;
-    [SerializeField] private float dashingCooldown = 0.5f; // Reduced cooldown for better feel
+    [SerializeField] private float dashingCooldown = 0.5f;
     [SerializeField] private TrailRenderer trailRenderer;
 
     private bool canDash = true;
@@ -138,7 +138,6 @@ public class PlayerMovement : MonoBehaviour
         // Apply dash movement while dashing
         if (isDashing)
         {
-            // Constantly apply dash velocity every frame while dashing
             rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
         }
     }
@@ -186,33 +185,27 @@ public class PlayerMovement : MonoBehaviour
         if (!enableDash) return;
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-        // Check if dash key is currently being held
         bool dashHeld = false;
         if (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed) dashHeld = true;
         if (Gamepad.current != null && Gamepad.current.buttonWest.isPressed) dashHeld = true;
 
-        // START DASH: Key is held AND we can dash AND not already dashing
         if (dashHeld && canDash && !isDashing)
         {
             StartDash();
         }
 
-        // STOP DASH: Key is released AND we are currently dashing
         if (!dashHeld && isDashing)
         {
             StopDash();
         }
 #else
-        // Legacy Input System
         bool shiftHeld = Input.GetKey(KeyCode.LeftShift);
         
-        // START DASH: Shift held AND can dash AND not dashing
         if (shiftHeld && canDash && !isDashing)
         {
             StartDash();
         }
         
-        // STOP DASH: Shift released AND currently dashing
         if (!shiftHeld && isDashing)
         {
             StopDash();
@@ -223,17 +216,10 @@ public class PlayerMovement : MonoBehaviour
     private void StartDash()
     {
         isDashing = true;
-
-        // Set gravity to 0 during dash
         rigidBody.gravityScale = 0f;
-
-        // Store dash direction based on player facing
         dashDirection = spriteRenderer.flipX ? -1f : 1f;
-
-        // Apply dash force
         rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
 
-        // Enable trail renderer if assigned
         if (trailRenderer != null)
         {
             trailRenderer.emitting = true;
@@ -245,24 +231,11 @@ public class PlayerMovement : MonoBehaviour
     private void StopDash()
     {
         isDashing = false;
-
-        // Disable trail renderer
-        if (trailRenderer != null)
-        {
-            trailRenderer.emitting = false;
-        }
-
-        // Restore gravity
+        if (trailRenderer != null) trailRenderer.emitting = false;
         rigidBody.gravityScale = originalGravity;
-
-        // Stop all momentum (optional - set to 0 for instant stop, or keep some velocity)
-        // Comment out the next line if you want to keep some momentum after dash
         rigidBody.linearVelocity = new Vector2(0f, rigidBody.linearVelocity.y);
-
-        Debug.Log("DASH STOPPED - Shift released");
-
-        // Start cooldown
         StartCoroutine(DashCooldown());
+        Debug.Log("DASH STOPPED - Shift released");
     }
 
     private IEnumerator DashCooldown()
@@ -278,12 +251,7 @@ public class PlayerMovement : MonoBehaviour
         if (isGrounded || jumpsRemaining > 0)
         {
             jumpRequested = true;
-
-            // If dashing, stop dash on jump
-            if (isDashing)
-            {
-                StopDash();
-            }
+            if (isDashing) StopDash();
         }
     }
 
@@ -345,7 +313,6 @@ public class PlayerMovement : MonoBehaviour
         currentInputX = input;
 #endif
 
-        // Only apply normal movement if not dashing
         if (!isDashing)
         {
             transform.Translate(new Vector3(movement.x, 0f, 0f));
@@ -363,7 +330,6 @@ public class PlayerMovement : MonoBehaviour
     private void FlipCharacterX()
     {
         if (spriteRenderer == null) return;
-
         if (isDashing) return;
 
         if (currentInputX > 0)
@@ -374,6 +340,27 @@ public class PlayerMovement : MonoBehaviour
         {
             spriteRenderer.flipX = true;
         }
+    }
+
+    // ADD THIS METHOD for respawn
+    public void ResetPlayerState()
+    {
+        isDashing = false;
+        canDash = true;
+        jumpsRemaining = maxJumps;
+
+        if (rigidBody != null)
+        {
+            rigidBody.linearVelocity = Vector2.zero;
+            rigidBody.gravityScale = originalGravity;
+        }
+
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = false;
+        }
+
+        Debug.Log("Player state reset!");
     }
 
     public bool IsDashing()
