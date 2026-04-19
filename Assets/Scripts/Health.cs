@@ -17,7 +17,7 @@ public class Health : MonoBehaviour
         {
             healthBar.maxValue = maxLives;
             healthBar.minValue = 0;
-            healthBar.wholeNumbers = false;  // THIS IS CRITICAL - MUST BE FALSE
+            healthBar.wholeNumbers = false;  // THIS MUST BE FALSE for thirds to work
             healthBar.value = currentLives;
         }
     }
@@ -46,7 +46,6 @@ public class Health : MonoBehaviour
         if (healthBar != null)
         {
             healthBar.value = currentLives;
-            Debug.Log("Health bar set to: " + currentLives + " (Should be: " + currentLives + "/3)");
         }
 
         Debug.Log("Lives: " + currentLives + "/" + maxLives);
@@ -74,11 +73,23 @@ public class Health : MonoBehaviour
         {
             transform.position = respawnPoint.position;
 
+            // Reset velocity
             Rigidbody2D rb = GetComponent<Rigidbody2D>();
             if (rb != null)
             {
                 rb.linearVelocity = Vector2.zero;
             }
+
+            // Reset player movement state
+            PlayerMovement playerMovement = GetComponent<PlayerMovement>();
+            if (playerMovement != null)
+            {
+                playerMovement.ResetPlayerState();
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Respawn point not assigned! Please drag a Transform to the Respawn Point field.");
         }
     }
 }

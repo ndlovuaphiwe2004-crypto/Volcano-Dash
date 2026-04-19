@@ -107403,8 +107403,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 617, y: 348.24017}
-  m_SizeDelta: {x: 606.6357, y: 315.1308}
+  m_AnchoredPosition: {x: 746.26, y: 320.1}
+  m_SizeDelta: {x: 427.4787, y: 439.7977}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1310534149
 MonoBehaviour:
@@ -107451,6 +107451,15 @@ MonoBehaviour:
     Clouds, Cactus, Fireball, Lava
 
 
+    ENSURE:
+
+    -View
+    is on Full HD(1920*1080)
+
+    -Scale is set on 0.75x
+
+
+
 
 
 
@@ -107482,8 +107491,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 27
-  m_fontSizeBase: 27
+  m_fontSize: 23
+  m_fontSizeBase: 23
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -107844,10 +107853,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -111395,7 +111404,7 @@ MonoBehaviour:
   spriteRenderer: {fileID: 0}
   rigidBody: {fileID: 2136024041}
   jumpForce: 9
-  doubleJumpForce: 9
+  doubleJumpForce: 7
   maxJumps: 2
   groundCheck: {fileID: 0}
   groundCheckRadius: 1
@@ -111406,7 +111415,6 @@ MonoBehaviour:
   dashingPower: 24
   dashingCooldown: 1
   trailRenderer: {fileID: 0}
-  coyoteTime: 0.12
 --- !u!4 &2136024049 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2636427858834210277, guid: 13c0dff3413da50428cd876ce4b9ce6e, type: 3}

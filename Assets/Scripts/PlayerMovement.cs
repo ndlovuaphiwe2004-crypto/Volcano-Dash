@@ -23,7 +23,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.2f;  // Increased for better detection
+    [SerializeField] private float groundCheckRadius = 0.08f;
     [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
 
@@ -38,12 +38,8 @@ public class PlayerMovement : MonoBehaviour
     private float dashDirection = 1f;
     private float originalGravity;
 
-    // For jump input buffering / coyote time
+    // For jump input buffering
     private bool jumpRequested = false;
-    private bool hasJumpedThisPress = false;
-    [SerializeField, Tooltip("Grace time after leaving ground during which a jump is still allowed.")]
-    private float coyoteTime = 0.12f;
-    private float coyoteTimer = 0f;
 
     void Start()
     {
@@ -99,7 +95,7 @@ public class PlayerMovement : MonoBehaviour
         xPositionLastFrame = transform.position.x;
         currentInputX = 0f;
 
-        // AUTO CREATE GROUND CHECK
+        // Ground check setup
         if (groundCheck == null)
         {
             GameObject gc = new GameObject("GroundCheck");
@@ -107,12 +103,9 @@ public class PlayerMovement : MonoBehaviour
             float feetOffset = -(spriteRenderer.bounds.extents.y + 0.05f);
             gc.transform.localPosition = new Vector3(0f, feetOffset, 0f);
             groundCheck = gc.transform;
-            Debug.Log("GroundCheck created automatically at feet position!");
         }
 
-        // Initialize jumpsRemaining correctly
-        jumpsRemaining = Mathf.Max(0, maxJumps);
-        coyoteTimer = 0f;
+        jumpsRemaining = maxJumps;
     }
 
     void Update()
@@ -147,12 +140,6 @@ public class PlayerMovement : MonoBehaviour
         {
             rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
         }
-
-        // Decrease coyote timer in FixedUpdate to keep it in sync with physics
-        if (!isGrounded)
-        {
-            coyoteTimer = Mathf.Max(0f, coyoteTimer - Time.fixedDeltaTime);
-        }
     }
 
     private void CheckGrounded()
@@ -163,39 +150,14 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // Use OverlapCircleAll and ignore the player's own colliders to avoid false positives.
-        Collider2D[] hits = Physics2D.OverlapCircleAll(groundCheck.position, groundCheckRadius, groundLayer);
-
+        Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         bool wasGrounded = isGrounded;
-        isGrounded = false;
+        isGrounded = (hit != null);
 
-        foreach (var c in hits)
-        {
-            if (c == null) continue;
-            // ignore triggers and colliders that belong to this player
-            if (c.isTrigger) continue;
-            if (c.gameObject == gameObject) continue;
-            if (c.attachedRigidbody == rigidBody) continue;
-
-            // Found a valid ground collider
-            isGrounded = true;
-            break;
-        }
-
-        // Reset jumps and coyote timer when landing (only when newly grounded)
         if (isGrounded && !wasGrounded)
         {
-            jumpsRemaining = Mathf.Max(0, maxJumps);
-            hasJumpedThisPress = false;
-            canDash = true;
-            coyoteTimer = coyoteTime;
-            // Debug.Log($"Landed! Jumps reset to: {jumpsRemaining}");
-        }
-
-        // If we just left the ground, start coyote timer (only when transitioning)
-        if (!isGrounded && wasGrounded)
-        {
-            coyoteTimer = coyoteTime;
+            jumpsRemaining = maxJumps;
+            Debug.Log($"Landed! Jumps reset to: {jumpsRemaining}");
         }
     }
 
@@ -206,27 +168,14 @@ public class PlayerMovement : MonoBehaviour
         if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) jumpPressed = true;
         if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame) jumpPressed = true;
 
-        if (jumpPressed && !hasJumpedThisPress)
+        if (jumpPressed)
         {
-            hasJumpedThisPress = true;
             RequestJump();
-        }
-
-        // Reset when space is released
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasReleasedThisFrame)
-        {
-            hasJumpedThisPress = false;
         }
 #else
-        if (Input.GetKeyDown(KeyCode.Space) && !hasJumpedThisPress)
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            hasJumpedThisPress = true;
             RequestJump();
-        }
-
-        if (Input.GetKeyUp(KeyCode.Space))
-        {
-            hasJumpedThisPress = false;
         }
 #endif
     }
@@ -236,29 +185,27 @@ public class PlayerMovement : MonoBehaviour
         if (!enableDash) return;
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-        // Check if dash key is currently being held (keyboard only by request)
-        bool dashHeld = (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed);
+        bool dashHeld = false;
+        if (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed) dashHeld = true;
+        if (Gamepad.current != null && Gamepad.current.buttonWest.isPressed) dashHeld = true;
 
-        // START DASH: Key is held AND we can dash AND not already dashing
         if (dashHeld && canDash && !isDashing)
         {
             StartDash();
         }
 
-        // STOP DASH: Key released AND we are currently dashing
         if (!dashHeld && isDashing)
         {
             StopDash();
         }
 #else
-        // Legacy Input System
         bool shiftHeld = Input.GetKey(KeyCode.LeftShift);
-
+        
         if (shiftHeld && canDash && !isDashing)
         {
             StartDash();
         }
-
+        
         if (!shiftHeld && isDashing)
         {
             StopDash();
@@ -269,17 +216,10 @@ public class PlayerMovement : MonoBehaviour
     private void StartDash()
     {
         isDashing = true;
-
-        // Set gravity to 0 during dash
         rigidBody.gravityScale = 0f;
-
-        // Store dash direction based on player facing
         dashDirection = spriteRenderer.flipX ? -1f : 1f;
-
-        // Apply dash velocity
         rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
 
-        // Enable trail renderer if assigned
         if (trailRenderer != null)
         {
             trailRenderer.emitting = true;
@@ -291,23 +231,11 @@ public class PlayerMovement : MonoBehaviour
     private void StopDash()
     {
         isDashing = false;
-
-        // Disable trail renderer
-        if (trailRenderer != null)
-        {
-            trailRenderer.emitting = false;
-        }
-
-        // Restore gravity
+        if (trailRenderer != null) trailRenderer.emitting = false;
         rigidBody.gravityScale = originalGravity;
-
-        // Stop horizontal dash momentum but preserve vertical velocity
         rigidBody.linearVelocity = new Vector2(0f, rigidBody.linearVelocity.y);
-
-        Debug.Log("DASH STOPPED - Shift released");
-
-        // Start cooldown
         StartCoroutine(DashCooldown());
+        Debug.Log("DASH STOPPED - Shift released");
     }
 
     private IEnumerator DashCooldown()
@@ -320,23 +248,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void RequestJump()
     {
-        // Allow jump if grounded, inside coyote time, or have extra jumps
-        if (isGrounded || coyoteTimer > 0f || jumpsRemaining > 0)
+        if (isGrounded || jumpsRemaining > 0)
         {
             jumpRequested = true;
-
-            // clear coyote to avoid double usage
-            coyoteTimer = 0f;
-
-            // If dashing, stop dash on jump
-            if (isDashing)
-            {
-                StopDash();
-            }
-        }
-        else
-        {
-            // no-op: jump not allowed
+            if (isDashing) StopDash();
         }
     }
 
@@ -344,10 +259,8 @@ public class PlayerMovement : MonoBehaviour
     {
         if (rigidBody == null) return;
 
-        // Choose correct force
         float currentJumpForce = isGrounded ? jumpForce : doubleJumpForce;
 
-        // Zero out downward velocity for consistent jump height
         Vector2 v = rigidBody.linearVelocity;
         if (v.y < 0)
         {
@@ -355,24 +268,20 @@ public class PlayerMovement : MonoBehaviour
         }
         rigidBody.linearVelocity = v;
 
-        // Apply impulse
         rigidBody.AddForce(Vector2.up * currentJumpForce, ForceMode2D.Impulse);
 
-        // Consume a jump if we were not grounded; if grounded, consume one from full supply
         if (!isGrounded)
         {
-            jumpsRemaining = Mathf.Max(0, jumpsRemaining - 1);
+            jumpsRemaining--;
+            Debug.Log($"Double jump! Jumps remaining: {jumpsRemaining}");
         }
         else
         {
-            jumpsRemaining = Mathf.Max(0, maxJumps - 1);
+            jumpsRemaining = maxJumps - 1;
+            Debug.Log($"Ground jump! Jumps remaining: {jumpsRemaining}");
         }
 
-        // prevent immediate re-triggering until release or landing
-        hasJumpedThisPress = true;
-
-        // clear coyote after jump
-        coyoteTimer = 0f;
+        Invoke(nameof(ResetJumpRequest), 0.05f);
     }
 
     private void ResetJumpRequest()
@@ -404,7 +313,6 @@ public class PlayerMovement : MonoBehaviour
         currentInputX = input;
 #endif
 
-        // Only apply normal movement if not dashing
         if (!isDashing)
         {
             transform.Translate(new Vector3(movement.x, 0f, 0f));
@@ -422,7 +330,6 @@ public class PlayerMovement : MonoBehaviour
     private void FlipCharacterX()
     {
         if (spriteRenderer == null) return;
-
         if (isDashing) return;
 
         if (currentInputX > 0)
@@ -433,6 +340,27 @@ public class PlayerMovement : MonoBehaviour
         {
             spriteRenderer.flipX = true;
         }
+    }
+
+    // ADD THIS METHOD for respawn
+    public void ResetPlayerState()
+    {
+        isDashing = false;
+        canDash = true;
+        jumpsRemaining = maxJumps;
+
+        if (rigidBody != null)
+        {
+            rigidBody.linearVelocity = Vector2.zero;
+            rigidBody.gravityScale = originalGravity;
+        }
+
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = false;
+        }
+
+        Debug.Log("Player state reset!");
     }
 
     public bool IsDashing()
