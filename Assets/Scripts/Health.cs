@@ -1,13 +1,15 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 public class Health : MonoBehaviour
 {
     public int maxLives = 3;
     private int currentLives;
     public Slider healthBar;
+    public Transform respawnPoint;
 
-    void Awake()
+    void Start()
     {
         currentLives = maxLives;
 
@@ -15,7 +17,7 @@ public class Health : MonoBehaviour
         {
             healthBar.maxValue = maxLives;
             healthBar.minValue = 0;
-            healthBar.wholeNumbers = false;
+            healthBar.wholeNumbers = false;  // THIS IS CRITICAL - MUST BE FALSE
             healthBar.value = currentLives;
         }
     }
@@ -44,11 +46,39 @@ public class Health : MonoBehaviour
         if (healthBar != null)
         {
             healthBar.value = currentLives;
+            Debug.Log("Health bar set to: " + currentLives + " (Should be: " + currentLives + "/3)");
         }
+
+        Debug.Log("Lives: " + currentLives + "/" + maxLives);
 
         if (currentLives <= 0)
         {
-            Debug.Log("PLAYER DIED");
+            Die();
+        }
+    }
+
+    void Die()
+    {
+        Debug.Log("PLAYER DIED! Respawning...");
+
+        // Reset lives to full
+        currentLives = maxLives;
+
+        if (healthBar != null)
+        {
+            healthBar.value = currentLives;
+        }
+
+        // Teleport player to respawn point
+        if (respawnPoint != null)
+        {
+            transform.position = respawnPoint.position;
+
+            Rigidbody2D rb = GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+            }
         }
     }
 }
