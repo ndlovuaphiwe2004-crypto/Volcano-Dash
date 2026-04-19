@@ -1,5 +1,4 @@
 using UnityEngine;
-<<<<<<< Updated upstream
 using TMPro;
 
 public class DialogueNPC : MonoBehaviour
@@ -125,49 +124,12 @@ public class DialogueNPC : MonoBehaviour
     }
 
     void OnTriggerExit2D(Collider2D other)
-=======
-
-public class NPCDialogue : MonoBehaviour
-{
-    public Dialogue dialogue;
-
-    private bool playerInRange;
-
-    void Update()
-    {
-        if (playerInRange && Input.GetKeyDown(KeyCode.E))
-        {
-            TriggerDialogue();
-        }
-    }
-
-    void TriggerDialogue()
-    {
-        DialogueManager.Instance.StartDialogue(dialogue.sentences);
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            playerInRange = true;
-        }
-    }
-
-    void OnTriggerExit(Collider other)
->>>>>>> Stashed changes
     {
         if (other.CompareTag("Player"))
         {
             playerInRange = false;
-<<<<<<< Updated upstream
             if (dialogueActive)
                 EndDialogue();
         }
     }
 }       
-=======
-        }
-    }
-}
->>>>>>> Stashed changes

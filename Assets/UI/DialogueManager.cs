@@ -5,7 +5,6 @@ using System.Collections.Generic;
 
 public class DialogueManager : MonoBehaviour
 {
-<<<<<<< Updated upstream
     public TMP_Text dialogueText;
     public GameObject dialoguePanel;
     public TMP_Text nameBox;
@@ -17,27 +16,6 @@ public class DialogueManager : MonoBehaviour
     public bool IsTyping  = false;
     public bool dialogueFinished = true  ;
 
-=======
-    public static DialogueManager Instance { get; private set; }
-     void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-    public TMP_Text dialogueText;
-    public Animator animator;
-    public GameObject dialogueGameObject;
-    private Queue<string> sentences;
-    public bool isDialogueActive => dialogueGameObject.activeSelf;
-    public float typingSpeed = 0.05f;
->>>>>>> Stashed changes
     // Start is called before the first frame update
     void Start()
     {
@@ -52,13 +30,9 @@ public class DialogueManager : MonoBehaviour
 
         sentences.Clear();
         foreach (string sentence in newSentences)
-<<<<<<< Updated upstream
         {
             sentences.Enqueue(sentence);
         }
-=======
-            sentences.Enqueue(sentence);
->>>>>>> Stashed changes
 
         DisplayNextSentence();
     }
