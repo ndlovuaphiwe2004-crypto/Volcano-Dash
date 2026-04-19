@@ -5,94 +5,160 @@ using System.Collections.Generic;
 
 public class DialogueManager : MonoBehaviour
 {
-<<<<<<< Updated upstream
+    // Singleton
+    public static DialogueManager Instance { get; private set; }
+
+    // UI references (assign in inspector)
     public TMP_Text dialogueText;
     public GameObject dialoguePanel;
     public TMP_Text nameBox;
     public Animator animator;
+
+    // Typing behavior
+    public float typingSpeed = 0.05f;
+
+    // State
+    public bool IsTyping { get; private set; }
+    public bool DialogueFinished { get; private set; } = true;
+
+    // Internal
     private Queue<string> sentences;
-    public static DialogueManager Instance;
+    private Coroutine typingCoroutine;
+    private string currentSentence;
 
-    public float typingSpeed = 0.05f; // Time delay between each character
-    public bool IsTyping  = false;
-    public bool dialogueFinished = true  ;
-
-=======
-    public static DialogueManager Instance { get; private set; }
-     void Awake()
+    void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
-        else
+        else if (Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
     }
-    public TMP_Text dialogueText;
-    public Animator animator;
-    public GameObject dialogueGameObject;
-    private Queue<string> sentences;
-    public bool isDialogueActive => dialogueGameObject.activeSelf;
-    public float typingSpeed = 0.05f;
->>>>>>> Stashed changes
-    // Start is called before the first frame update
+
     void Start()
     {
         sentences = new Queue<string>();
     }
 
-    // Start a new dialogue from a collection of sentences
+    // Overload: start with speaker name
+    public void StartDialogue(string speakerName, IEnumerable<string> newSentences)
+    {
+        if (nameBox != null)
+            nameBox.text = speakerName ?? string.Empty;
+
+        StartDialogue(newSentences);
+    }
+
     public void StartDialogue(IEnumerable<string> newSentences)
     {
         if (animator != null)
             animator.SetBool("IsOpen", true);
 
-        sentences.Clear();
-        foreach (string sentence in newSentences)
-<<<<<<< Updated upstream
-        {
-            sentences.Enqueue(sentence);
-        }
-=======
-            sentences.Enqueue(sentence);
->>>>>>> Stashed changes
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(true);
 
+                                sentences.Clear();
+        if (newSentences != null)
+        {
+            foreach (string sentence in newSentences)
+            {
+                if (sentence != null)
+                    sentences.Enqueue(sentence);
+            }
+        }
+
+        DialogueFinished = false;
         DisplayNextSentence();
     }
 
     public void DisplayNextSentence()
     {
-        if (sentences.Count == 0)
+        // If currently typing, finish the current sentence immediately
+        if (IsTyping)
+        {
+            if (typingCoroutine != null)
+            {
+                StopCoroutine(typingCoroutine);
+                typingCoroutine = null;
+            }
+
+            if (dialogueText != null)
+                dialogueText.text = currentSentence ?? string.Empty;
+
+            IsTyping = false;
+            return;
+        }
+
+        if (sentences == null || sentences.Count == 0)
         {
             EndDialogue();
             return;
         }
 
-        string sentence = sentences.Dequeue();
-        StopAllCoroutines();
-        StartCoroutine(TypeSentence(sentence));
+        currentSentence = sentences.Dequeue();
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
+
+        typingCoroutine = StartCoroutine(TypeSentence(currentSentence));
     }
 
     private IEnumerator TypeSentence(string sentence)
     {
-        dialogueText.text = "";
+        IsTyping = true;
+
+        if (dialogueText != null)
+            dialogueText.text = string.Empty;
+
+        if (string.IsNullOrEmpty(sentence))
+        {
+            // Small pause to show empty line if necessary
+            yield return null;
+            IsTyping = false;
+            yield break;
+        }
+
         foreach (char letter in sentence.ToCharArray())
         {
-            dialogueText.text += letter;
-            yield return null;
+            if (dialogueText != null)
+                dialogueText.text += letter;
+
+            if (typingSpeed > 0f)
+                yield return new WaitForSeconds(typingSpeed);
+            else
+                yield return null;
         }
+
+        IsTyping = false;
+        typingCoroutine = null;
     }
 
     private void EndDialogue()
     {
         if (animator != null)
             animator.SetBool("IsOpen", false);
+
+        if (dialoguePanel != null)
+            dialoguePanel.SetActive(false);
+
+        DialogueFinished = true;
+        currentSentence = null;
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
+        IsTyping = false;
     }
 
-    // Update is called once per frame (kept for future use)
+    // Reserved for input handling or future behavior
     void Update()
     {
     }
