@@ -610,7 +610,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 10.799999
+  orthographic size: 4.72
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -107446,7 +107446,7 @@ MonoBehaviour:
     KEY
 
 
-    OBTACLE:
+    OBSTACLE:
 
     Clouds, Cactus, Fireball, Lava
 
