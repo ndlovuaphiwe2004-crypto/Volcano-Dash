@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 68be2323c1963fa4b9162ba25e09f301
+guid: f1eb8ad3d9afb7f46a2e6084e380e7a8
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 1277493863974512933
-    second: GameDialogueBox_0
+      213: -5745494263934343719
+    second: VOLCANO DASH_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: GameDialogueBox_0
+      name: VOLCANO DASH_0
       rect:
         serializedVersion: 2
-        x: 7
-        y: 29
-        width: 44
-        height: 13
+        x: 0
+        y: 43
+        width: 64
+        height: 21
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 52921fc96e19ab110800000000000000
-      internalID: 1277493863974512933
+      spriteID: 9d5262b6867e340b0800000000000000
+      internalID: -5745494263934343719
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      GameDialogueBox_0: 1277493863974512933
+      VOLCANO DASH_0: -5745494263934343719
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

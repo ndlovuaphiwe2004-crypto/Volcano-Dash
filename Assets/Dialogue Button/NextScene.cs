@@ -10,6 +10,6 @@ public class SceneChanger : MonoBehaviour
         int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
 
         // Load the next scene in the Build Settings
-        SceneManager.LoadScene(currentSceneIndex + 1);
+        SceneManager.LoadScene("Main_Menu");
     }
 }
