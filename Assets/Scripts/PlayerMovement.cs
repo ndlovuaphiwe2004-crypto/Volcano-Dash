@@ -89,11 +89,8 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
 
         playerHalfWidth = spriteRenderer.bounds.extents.x;
-
-        // INCREASED BOUNDS - Player can move much further
-        float extraBoundSpace = 50f;
-        leftBound = leftEdge.x + playerHalfWidth - extraBoundSpace;
-        rightBound = rightEdge.x - playerHalfWidth + extraBoundSpace;
+        leftBound = leftEdge.x + playerHalfWidth;
+        rightBound = rightEdge.x - playerHalfWidth;
 
         xPositionLastFrame = transform.position.x;
         currentInputX = 0f;
@@ -324,14 +321,24 @@ public class PlayerMovement : MonoBehaviour
 
     private void ClampMovement()
     {
-        // INCREASED BOUNDS - Player can move much further before stopping
-        float extraBoundSpace = 50f;
-        float minX = leftBound - extraBoundSpace;
-        float maxX = rightBound + extraBoundSpace;
+        // FIXED: Keep player inside camera view to prevent "out of view frustum" error
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null) return;
+
+        // Get current camera bounds
+        Vector2 leftEdge = mainCamera.ScreenToWorldPoint(new Vector2(0, 0));
+        Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
+
+        if (spriteRenderer == null) return;
+        playerHalfWidth = spriteRenderer.bounds.extents.x;
+
+        // Calculate bounds to keep player on screen
+        float minX = leftEdge.x + playerHalfWidth;
+        float maxX = rightEdge.x - playerHalfWidth;
+
+        // Clamp position to camera view
         float clampedX = Mathf.Clamp(transform.position.x, minX, maxX);
-        Vector3 pos = transform.position;
-        pos.x = clampedX;
-        transform.position = pos;
+        transform.position = new Vector2(clampedX, transform.position.y);
     }
 
     private void FlipCharacterX()
@@ -349,7 +356,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ADD THIS METHOD for respawn
     public void ResetPlayerState()
     {
         isDashing = false;
