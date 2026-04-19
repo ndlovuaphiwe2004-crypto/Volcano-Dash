@@ -23,7 +23,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.08f;
+    [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
 
@@ -89,8 +89,11 @@ public class PlayerMovement : MonoBehaviour
         Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
 
         playerHalfWidth = spriteRenderer.bounds.extents.x;
-        leftBound = leftEdge.x + playerHalfWidth;
-        rightBound = rightEdge.x - playerHalfWidth;
+
+        // INCREASED BOUNDS - Player can move much further
+        float extraBoundSpace = 50f;
+        leftBound = leftEdge.x + playerHalfWidth - extraBoundSpace;
+        rightBound = rightEdge.x - playerHalfWidth + extraBoundSpace;
 
         xPositionLastFrame = transform.position.x;
         currentInputX = 0f;
@@ -321,7 +324,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void ClampMovement()
     {
-        float clampedX = Mathf.Clamp(transform.position.x, leftBound, rightBound);
+        // INCREASED BOUNDS - Player can move much further before stopping
+        float extraBoundSpace = 50f;
+        float minX = leftBound - extraBoundSpace;
+        float maxX = rightBound + extraBoundSpace;
+        float clampedX = Mathf.Clamp(transform.position.x, minX, maxX);
         Vector3 pos = transform.position;
         pos.x = clampedX;
         transform.position = pos;

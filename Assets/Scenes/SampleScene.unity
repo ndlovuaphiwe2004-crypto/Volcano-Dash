@@ -610,7 +610,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 4.72
+  orthographic size: 10.799999
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -108370,7 +108370,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxLives: 3
   healthBar: {fileID: 0}
-  respawnPoint: {fileID: 0}
 --- !u!1 &1634141020
 GameObject:
   m_ObjectHideFlags: 0
@@ -111434,7 +111433,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxLives: 3
   healthBar: {fileID: 1572579110}
-  respawnPoint: {fileID: 1754986751}
 --- !u!1001 &8726406939152679470
 PrefabInstance:
   m_ObjectHideFlags: 0
