@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 
-public class MultiTMPAnimator : MonoBehaviour
+public class TextManager : MonoBehaviour
 {
     [Header("Assign 7 TMP Texts")]
     public TextMeshProUGUI[] tmpTexts = new TextMeshProUGUI[7];

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class SceneChanger : MonoBehaviour
+public class NextScene : MonoBehaviour
 {
     // Call this method to load the next scene
     public void LoadNextScene()
