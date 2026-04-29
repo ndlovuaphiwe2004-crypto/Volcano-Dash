@@ -23,7 +23,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.08f;
+    [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
 
@@ -321,10 +321,24 @@ public class PlayerMovement : MonoBehaviour
 
     private void ClampMovement()
     {
-        float clampedX = Mathf.Clamp(transform.position.x, leftBound, rightBound);
-        Vector3 pos = transform.position;
-        pos.x = clampedX;
-        transform.position = pos;
+        // FIXED: Keep player inside camera view to prevent "out of view frustum" error
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null) return;
+
+        // Get current camera bounds
+        Vector2 leftEdge = mainCamera.ScreenToWorldPoint(new Vector2(0, 0));
+        Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
+
+        if (spriteRenderer == null) return;
+        playerHalfWidth = spriteRenderer.bounds.extents.x;
+
+        // Calculate bounds to keep player on screen
+        float minX = leftEdge.x + playerHalfWidth;
+        float maxX = rightEdge.x - playerHalfWidth;
+
+        // Clamp position to camera view
+        float clampedX = Mathf.Clamp(transform.position.x, minX, maxX);
+        transform.position = new Vector2(clampedX, transform.position.y);
     }
 
     private void FlipCharacterX()
@@ -342,7 +356,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ADD THIS METHOD for respawn
     public void ResetPlayerState()
     {
         isDashing = false;
