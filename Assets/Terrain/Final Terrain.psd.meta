@@ -119,8 +119,8 @@ TextureImporter:
       name: Final Terrain_0
       rect:
         serializedVersion: 2
-        x: 10
-        y: 17
+        x: 15
+        y: 16
         width: 16
         height: 16
       alignment: 0
@@ -141,8 +141,8 @@ TextureImporter:
       name: Final Terrain_1
       rect:
         serializedVersion: 2
-        x: 37
-        y: 17
+        x: 32
+        y: 37
         width: 16
         height: 16
       alignment: 0
