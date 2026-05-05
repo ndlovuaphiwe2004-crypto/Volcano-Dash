@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 
@@ -7,29 +7,28 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float speed = 10f;
     [SerializeField] private SpriteRenderer spriteRenderer;
-    private Vector2 movement;
-    private float leftBound;
-    private float rightBound;
-    private float playerHalfWidth;
-    private float xPositionLastFrame;
     private float currentInputX;
+    private float playerHalfWidth;
+
+    [Header("Animation")]
+    [SerializeField] private Animator animator;
 
     [Header("Jump Settings")]
     [SerializeField] private Rigidbody2D rigidBody;
     [SerializeField] private float jumpForce = 8f;
-    [SerializeField] private float doubleJumpForce = 7f;
     [SerializeField] private int maxJumps = 2;
-    private int jumpsRemaining;
+    private int jumpCount = 0;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.2f;
+    [SerializeField] private float groundCheckDistance = 0.2f;
     [SerializeField] private LayerMask groundLayer = ~0;
     private bool isGrounded;
 
     [Header("Dash Settings")]
     [SerializeField] private bool enableDash = true;
     [SerializeField] private float dashingPower = 24f;
+    [SerializeField] private float dashDuration = 0.2f;
     [SerializeField] private float dashingCooldown = 0.5f;
     [SerializeField] private TrailRenderer trailRenderer;
 
@@ -37,85 +36,40 @@ public class PlayerMovement : MonoBehaviour
     private bool isDashing;
     private float dashDirection = 1f;
     private float originalGravity;
-
-    // For jump input buffering
     private bool jumpRequested = false;
+    private bool dashKeyHeld = false;
+
+    private string currentState = "Idle";
 
     void Start()
     {
-        // Rigidbody setup
-        if (rigidBody == null)
-        {
-            rigidBody = GetComponent<Rigidbody2D>();
-            if (rigidBody == null)
-            {
-                Debug.LogError("No Rigidbody2D found!");
-                return;
-            }
-        }
+        if (animator == null) animator = GetComponent<Animator>();
+        if (rigidBody == null) rigidBody = GetComponent<Rigidbody2D>();
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
 
-        // Store original gravity
         originalGravity = rigidBody.gravityScale;
 
-        // Configure Rigidbody2D for better dash performance
-        rigidBody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-        // SpriteRenderer setup
-        if (spriteRenderer == null)
-        {
-            spriteRenderer = GetComponent<SpriteRenderer>();
-            if (spriteRenderer == null)
-            {
-                Debug.LogError("No SpriteRenderer found!");
-                return;
-            }
-        }
-
-        // TrailRenderer setup (optional)
-        if (trailRenderer == null)
-        {
-            trailRenderer = GetComponent<TrailRenderer>();
-        }
-
-        // Camera bounds setup
-        Camera mainCamera = Camera.main;
-        if (mainCamera == null)
-        {
-            Debug.LogError("No main camera found!");
-            return;
-        }
-
-        Vector2 leftEdge = mainCamera.ScreenToWorldPoint(new Vector2(0, 0));
-        Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
-
-        playerHalfWidth = spriteRenderer.bounds.extents.x;
-        leftBound = leftEdge.x + playerHalfWidth;
-        rightBound = rightEdge.x - playerHalfWidth;
-
-        xPositionLastFrame = transform.position.x;
-        currentInputX = 0f;
-
-        // Ground check setup
         if (groundCheck == null)
         {
             GameObject gc = new GameObject("GroundCheck");
             gc.transform.parent = transform;
-            float feetOffset = -(spriteRenderer.bounds.extents.y + 0.05f);
-            gc.transform.localPosition = new Vector3(0f, feetOffset, 0f);
+            gc.transform.localPosition = new Vector3(0f, -0.3f, 0f);
             groundCheck = gc.transform;
         }
 
-        jumpsRemaining = maxJumps;
+        playerHalfWidth = spriteRenderer.bounds.extents.x;
+        ChangeAnimationState("Idle");
+        jumpCount = 0;
+        isGrounded = true;
     }
 
     void Update()
     {
-        CheckGrounded();
+        if (animator == null || rigidBody == null) return;
 
-        // Handle dash input FIRST - this determines if we're dashing
+        CheckGroundedSimple();
         HandleDashInput();
 
-        // Only handle other inputs if not dashing
         if (!isDashing)
         {
             HandleJumpInput();
@@ -124,40 +78,65 @@ public class PlayerMovement : MonoBehaviour
         }
 
         ClampMovement();
+        DecideWhichAnimationToPlay();
+    }
+
+    private void CheckGroundedSimple()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(groundCheck.position, Vector2.down, groundCheckDistance, groundLayer);
+        bool wasGrounded = isGrounded;
+        isGrounded = hit.collider != null;
+
+        if (isGrounded && !wasGrounded)
+        {
+            jumpCount = 0;
+            canDash = true;
+            Debug.Log("Landed on ground");
+        }
+    }
+
+    private void DecideWhichAnimationToPlay()
+    {
+        if (isDashing)
+        {
+            ChangeAnimationState("Dash");
+            return;
+        }
+
+        if (!isGrounded)
+        {
+            ChangeAnimationState("Jump");
+            return;
+        }
+
+        if (isGrounded && Mathf.Abs(currentInputX) > 0.05f)
+        {
+            ChangeAnimationState("Run");
+            return;
+        }
+
+        ChangeAnimationState("Idle");
+    }
+
+    private void ChangeAnimationState(string newState)
+    {
+        if (currentState == newState) return;
+        animator.Play(newState);
+        currentState = newState;
     }
 
     void FixedUpdate()
     {
-        // Handle physics-based jumping
         if (jumpRequested)
         {
             PerformJump();
             jumpRequested = false;
         }
 
-        // Apply dash movement while dashing
+        // Apply dash velocity only while dashing
         if (isDashing)
         {
             rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
-        }
-    }
-
-    private void CheckGrounded()
-    {
-        if (groundCheck == null)
-        {
-            isGrounded = false;
-            return;
-        }
-
-        Collider2D hit = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-        bool wasGrounded = isGrounded;
-        isGrounded = (hit != null);
-
-        if (isGrounded && !wasGrounded)
-        {
-            jumpsRemaining = maxJumps;
-            Debug.Log($"Landed! Jumps reset to: {jumpsRemaining}");
         }
     }
 
@@ -165,15 +144,17 @@ public class PlayerMovement : MonoBehaviour
     {
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
         bool jumpPressed = false;
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) jumpPressed = true;
-        if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame) jumpPressed = true;
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            jumpPressed = true;
+        if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+            jumpPressed = true;
 
         if (jumpPressed)
         {
             RequestJump();
         }
 #else
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetButtonDown("Jump"))
         {
             RequestJump();
         }
@@ -185,28 +166,43 @@ public class PlayerMovement : MonoBehaviour
         if (!enableDash) return;
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-        bool dashHeld = false;
-        if (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed) dashHeld = true;
-        if (Gamepad.current != null && Gamepad.current.buttonWest.isPressed) dashHeld = true;
+        bool dashPressed = false;
+        bool dashReleased = false;
 
-        if (dashHeld && canDash && !isDashing)
+        if (Keyboard.current != null)
+        {
+            dashPressed = Keyboard.current.leftShiftKey.wasPressedThisFrame;
+            dashReleased = Keyboard.current.leftShiftKey.wasReleasedThisFrame;
+        }
+        if (Gamepad.current != null)
+        {
+            dashPressed = Gamepad.current.buttonWest.wasPressedThisFrame;
+            dashReleased = Gamepad.current.buttonWest.wasReleasedThisFrame;
+        }
+
+        // Start dash when pressing key on ground
+        if (dashPressed && canDash && !isDashing && isGrounded)
         {
             StartDash();
         }
 
-        if (!dashHeld && isDashing)
+        // Stop dash when releasing key
+        if (dashReleased && isDashing)
         {
             StopDash();
         }
 #else
-        bool shiftHeld = Input.GetKey(KeyCode.LeftShift);
+        bool dashPressed = Input.GetKeyDown(KeyCode.LeftShift);
+        bool dashReleased = Input.GetKeyUp(KeyCode.LeftShift);
         
-        if (shiftHeld && canDash && !isDashing)
+        // Start dash when pressing key on ground
+        if (dashPressed && canDash && !isDashing && isGrounded)
         {
             StartDash();
         }
         
-        if (!shiftHeld && isDashing)
+        // Stop dash when releasing key
+        if (dashReleased && isDashing)
         {
             StopDash();
         }
@@ -217,7 +213,16 @@ public class PlayerMovement : MonoBehaviour
     {
         isDashing = true;
         rigidBody.gravityScale = 0f;
-        dashDirection = spriteRenderer.flipX ? -1f : 1f;
+
+        if (Mathf.Abs(currentInputX) > 0.1f)
+        {
+            dashDirection = Mathf.Sign(currentInputX);
+        }
+        else
+        {
+            dashDirection = spriteRenderer != null && spriteRenderer.flipX ? -1f : 1f;
+        }
+
         rigidBody.linearVelocity = new Vector2(dashDirection * dashingPower, 0f);
 
         if (trailRenderer != null)
@@ -225,17 +230,24 @@ public class PlayerMovement : MonoBehaviour
             trailRenderer.emitting = true;
         }
 
-        Debug.Log("DASH ACTIVE - Holding Shift");
+        ChangeAnimationState("Dash");
+        Debug.Log("Dash started");
     }
 
     private void StopDash()
     {
         isDashing = false;
-        if (trailRenderer != null) trailRenderer.emitting = false;
+
+        if (trailRenderer != null)
+        {
+            trailRenderer.emitting = false;
+        }
+
         rigidBody.gravityScale = originalGravity;
         rigidBody.linearVelocity = new Vector2(0f, rigidBody.linearVelocity.y);
+
         StartCoroutine(DashCooldown());
-        Debug.Log("DASH STOPPED - Shift released");
+        Debug.Log("Dash stopped");
     }
 
     private IEnumerator DashCooldown()
@@ -243,15 +255,14 @@ public class PlayerMovement : MonoBehaviour
         canDash = false;
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
-        Debug.Log("Dash ready again!");
+        Debug.Log("Dash ready again");
     }
 
     private void RequestJump()
     {
-        if (isGrounded || jumpsRemaining > 0)
+        if (jumpCount < maxJumps)
         {
             jumpRequested = true;
-            if (isDashing) StopDash();
         }
     }
 
@@ -259,84 +270,58 @@ public class PlayerMovement : MonoBehaviour
     {
         if (rigidBody == null) return;
 
-        float currentJumpForce = isGrounded ? jumpForce : doubleJumpForce;
+        jumpCount++;
 
-        Vector2 v = rigidBody.linearVelocity;
-        if (v.y < 0)
-        {
-            v.y = 0f;
-        }
-        rigidBody.linearVelocity = v;
+        Vector2 velocity = rigidBody.linearVelocity;
+        velocity.y = 0f;
+        rigidBody.linearVelocity = velocity;
 
-        rigidBody.AddForce(Vector2.up * currentJumpForce, ForceMode2D.Impulse);
+        rigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
 
-        if (!isGrounded)
-        {
-            jumpsRemaining--;
-            Debug.Log($"Double jump! Jumps remaining: {jumpsRemaining}");
-        }
-        else
-        {
-            jumpsRemaining = maxJumps - 1;
-            Debug.Log($"Ground jump! Jumps remaining: {jumpsRemaining}");
-        }
-
-        Invoke(nameof(ResetJumpRequest), 0.05f);
-    }
-
-    private void ResetJumpRequest()
-    {
-        jumpRequested = false;
+        ChangeAnimationState("Jump");
     }
 
     private void HandleMovement()
     {
-        movement = Vector2.zero;
-
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
         Vector2 inputVector = Vector2.zero;
 
-        if (Gamepad.current != null)
-            inputVector = Gamepad.current.leftStick.ReadValue();
-        else if (Keyboard.current != null)
+        if (Keyboard.current != null)
         {
             float left = (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) ? -1f : 0f;
             float right = (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) ? 1f : 0f;
             inputVector.x = left + right;
         }
 
-        movement.x = inputVector.x * speed * Time.deltaTime;
+        if (Gamepad.current != null)
+        {
+            inputVector = Gamepad.current.leftStick.ReadValue();
+        }
+
         currentInputX = inputVector.x;
 #else
-        float input = Input.GetAxis("Horizontal");
-        movement.x = input * speed * Time.deltaTime;
-        currentInputX = input;
+        currentInputX = Input.GetAxis("Horizontal");
 #endif
 
         if (!isDashing)
         {
-            transform.Translate(new Vector3(movement.x, 0f, 0f));
+            transform.Translate(new Vector3(currentInputX * speed * Time.deltaTime, 0f, 0f));
         }
     }
 
     private void ClampMovement()
     {
-        // FIXED: Keep player inside camera view to prevent "out of view frustum" error
         Camera mainCamera = Camera.main;
-        if (mainCamera == null) return;
+        if (mainCamera == null || spriteRenderer == null) return;
 
-        // Get current camera bounds
         Vector2 leftEdge = mainCamera.ScreenToWorldPoint(new Vector2(0, 0));
         Vector2 rightEdge = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, 0));
 
-        if (spriteRenderer == null) return;
         playerHalfWidth = spriteRenderer.bounds.extents.x;
 
-        // Calculate bounds to keep player on screen
         float minX = leftEdge.x + playerHalfWidth;
         float maxX = rightEdge.x - playerHalfWidth;
 
-        // Clamp position to camera view
         float clampedX = Mathf.Clamp(transform.position.x, minX, maxX);
         transform.position = new Vector2(clampedX, transform.position.y);
     }
@@ -356,11 +341,21 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public bool IsDashing()
+    {
+        return isDashing;
+    }
+
+    public bool IsGrounded()
+    {
+        return isGrounded;
+    }
+
     public void ResetPlayerState()
     {
         isDashing = false;
         canDash = true;
-        jumpsRemaining = maxJumps;
+        jumpCount = 0;
 
         if (rigidBody != null)
         {
@@ -373,23 +368,13 @@ public class PlayerMovement : MonoBehaviour
             trailRenderer.emitting = false;
         }
 
-        Debug.Log("Player state reset!");
-    }
-
-    public bool IsDashing()
-    {
-        return isDashing;
-    }
-
-    public bool IsGrounded()
-    {
-        return isGrounded;
+        ChangeAnimationState("Idle");
     }
 
     private void OnDrawGizmosSelected()
     {
         if (groundCheck == null) return;
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        Gizmos.DrawWireSphere(groundCheck.position, groundCheckDistance);
     }
 }
