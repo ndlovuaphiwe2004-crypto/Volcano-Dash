@@ -16,11 +16,17 @@ public class PauseMenu : MonoBehaviour
         pauseMenu.SetActive(false);
         Time.timeScale = 1f;
     }
-     public void Exit()
+     public void Quit()
     {
         SceneManager.LoadScene("Main_Menu");
         Time.timeScale = 1f;
     }
 
-  
+    public void Restart()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        Time.timeScale = 1f;
+    }
+
+
 }
