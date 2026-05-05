@@ -15,12 +15,11 @@ public class MultiTMPAnimator : MonoBehaviour
     // Sentences to display
     private string[] sentences = new string[]
     {
-        "My lolo used to tell me stories about this mountain. He said Gugurang watches everything. Every step. Every breath. Every offering thrown into his fire. I thought they were just stories. Old tales to scare children into being good. So I walked up here with empty hands. No sacrifice. No prayer. Just... curiosity..",
+        "My lolo used to tell me stories about this mountain. He said Gugurang watches everything. Every step. Every breath. Every offering thrown into his fire. I thought they were just stories. Old tales to scare children into being good. So I walked up here with empty hands. No sacrifice. No prayer. Just curiosity..",
         "Now the mountain is crying. Every offering my people have given for a thousand years... it's all coming back. Gold coins my great-great-grandfather saved for an entire year. Jeweled daggers passed down through generations. Masks worn by elders I never got to meet.",
         "I can see them all. The offerings. The prayers. The sacrifices. They're all here. And they're all crying out to me. To you. To everyone who has ever climbed this mountain. To everyone who has ever sought Gugurang's favor.",
         "I need to run for my life.",
         "I wasn't ready when I climbed this mountain. But maybe... maybe I can be ready when I come back down.",
-        "Another line if you want...",
         "I can’t leave these coins and gems behind."
     };
 
