@@ -2,116 +2,105 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
-using System.IO;
-using System.Text;
-using System;
 
 public class LoadingScene : MonoBehaviour
 {
-    [Tooltip("Name of your main game scene")]
-    public string sceneToLoad;
+    [Header("UI Elements")]
+    [SerializeField] private Slider loadingSlider;
 
-    [Tooltip("Optional: UI Slider to drive the fill. Preferred when using Unity Slider component.")]
-    public Slider progressSlider;
+    [Header("Scene to Load")]
+    [SerializeField] private string sceneToLoad;
 
-    [Tooltip("Optional: UI Image used for the loading bar (fallback).")]
-    public Image progressBar;
+    [Header("Loading Settings")]
+    [Tooltip("Time in seconds for the slider to fill.")]
+    [SerializeField] private float loadDuration = 10f;
 
-    [Tooltip("Minimum time to show the loading screen")]
-    public float minDisplayTime = 2.0f;
-
-    void Start()
+    private void Start()
     {
-        // Trim to avoid accidental whitespace issues from inspector copy/paste.
-        sceneToLoad = sceneToLoad?.Trim();
-
-        Debug.Log($"[LoadingScene] Start. sceneToLoad='{sceneToLoad}'");
-
-        if (string.IsNullOrWhiteSpace(sceneToLoad))
+        if (string.IsNullOrEmpty(sceneToLoad))
         {
-            Debug.LogError("[LoadingScene] sceneToLoad is empty. Set it in the inspector or load a valid scene.");
+            Debug.LogError("LoadingScene: 'sceneToLoad' is not set. Assign a scene name or build index in the inspector.");
             return;
         }
 
-        // Validate the scene name exists in Build Settings
-        int buildSceneCount = SceneManager.sceneCountInBuildSettings;
-        int foundBuildIndex = -1;
-
-        for (int i = 0; i < buildSceneCount; i++)
+        if (loadingSlider == null)
         {
-            string path = SceneUtility.GetScenePathByBuildIndex(i);
-            string name = Path.GetFileNameWithoutExtension(path);
-            if (string.Equals(name, sceneToLoad, StringComparison.OrdinalIgnoreCase))
-            {
-                foundBuildIndex = i;
-                break;
-            }
-        }
-
-        if (foundBuildIndex < 0)
-        {
-            // Build a helpful message listing available scenes
-            var sb = new StringBuilder();
-            sb.AppendLine("[LoadingScene] Scene not found in Build Settings:");
-            sb.AppendLine($"  Requested: '{sceneToLoad}'");
-            sb.AppendLine("  Scenes in Build Settings:");
-
-            for (int i = 0; i < buildSceneCount; i++)
-            {
-                string path = SceneUtility.GetScenePathByBuildIndex(i);
-                string name = Path.GetFileNameWithoutExtension(path);
-                sb.AppendLine($"    - {name} (build index {i})");
-            }
-
-            sb.AppendLine("Action: Add the scene to File > Build Settings... or correct the name in the inspector.");
-            Debug.LogError(sb.ToString());
+            Debug.LogError("LoadingScene: 'loadingSlider' reference is missing. Assign the UI Slider in the inspector.");
             return;
         }
 
-        if (progressSlider != null)
+        if (loadDuration <= 0f)
         {
-            progressSlider.minValue = 0f;
-            progressSlider.maxValue = 1f;
-            progressSlider.wholeNumbers = false;
-            progressSlider.value = 0f;
+            Debug.LogWarning("LoadingScene: 'loadDuration' must be > 0. Defaulting to 10 seconds.");
+            loadDuration = 10f;
         }
 
-        if (progressBar != null)
-        {
-            progressBar.fillAmount = 0f;
-        }
-
-        // Start the background loading process using the validated scene name
+        loadingSlider.value = 0f;
         StartCoroutine(LoadSceneAsync());
     }
-                
-    IEnumerator LoadSceneAsync()
+
+    private IEnumerator LoadSceneAsync()
     {
-        float startTime = Time.time;
-        AsyncOperation operation = SceneManager.LoadSceneAsync(sceneToLoad);
+        int targetBuildIndex = -1;
+        int totalScenes = SceneManager.sceneCountInBuildSettings;
 
-        // Prevent the scene from activating immediately
-        operation.allowSceneActivation = false;
-
-        while (!operation.isDone)
+        if (int.TryParse(sceneToLoad, out int parsedIndex))
         {
-            // operation.progress goes from 0 to 0.9
-            float progress = Mathf.Clamp01(operation.progress / 0.9f);
-
-            // Update UI: prefer slider if assigned, otherwise use image fill
-            if (progressSlider != null)
+            if (parsedIndex < 0 || parsedIndex >= totalScenes)
             {
-                progressSlider.value = progress;
-            }
-            else if (progressBar != null)
-            {
-                progressBar.fillAmount = progress;
+                Debug.LogError($"LoadingScene: Scene build index '{parsedIndex}' is out of range (0..{totalScenes - 1}). Add the scene to Build Settings.");
+                yield break;
             }
 
-            // Wait until both the scene is loaded and the minimum time has passed
-            if (operation.progress >= 0.9f && (Time.time - startTime) >= minDisplayTime)
+            targetBuildIndex = parsedIndex;
+        }
+        else
+        {
+            for (int i = 0; i < totalScenes; i++)
             {
-                operation.allowSceneActivation = true;
+                string path = SceneUtility.GetScenePathByBuildIndex(i);
+                string name = System.IO.Path.GetFileNameWithoutExtension(path);
+                if (string.Equals(name, sceneToLoad, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    targetBuildIndex = i;
+                    break;
+                }
+            }
+
+            if (targetBuildIndex == -1)
+            {
+                Debug.LogError($"LoadingScene: Scene '{sceneToLoad}' was not found in Build Settings. Open File > Build Settings and add the scene (use the scene's file name, not its path).");
+                yield break;
+            }
+        }
+
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(targetBuildIndex);
+        if (asyncLoad == null)
+        {
+            Debug.LogError($"LoadingScene: Failed to start async load for scene '{sceneToLoad}' (build index {targetBuildIndex}). Ensure the scene is included in Build Settings.");
+            yield break;
+        }
+
+        asyncLoad.allowSceneActivation = false;
+
+        float elapsed = 0f;
+
+        while (!asyncLoad.isDone)
+        {
+            elapsed += Time.deltaTime;
+
+            float timeProgress = Mathf.Clamp01(elapsed / loadDuration);
+            float asyncProgressNormalized = Mathf.Clamp01(asyncLoad.progress / 0.9f);
+
+            if (loadingSlider != null)
+            {
+                loadingSlider.value = timeProgress;
+            }
+
+            // Only activate when both the timer has finished (slider reached 1) and the async load has reached 0.9 (normalized == 1)
+            if (timeProgress >= 1f && asyncProgressNormalized >= 1f)
+            {
+                asyncLoad.allowSceneActivation = true;
             }
 
             yield return null;
