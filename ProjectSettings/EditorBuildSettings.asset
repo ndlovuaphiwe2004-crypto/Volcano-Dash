@@ -5,21 +5,27 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/DialogueScene.unity
     guid: 7ba9f00e07e8b324d8bbc888913b1ee1
   - enabled: 1
     path: Assets/Scenes/Main_menu.unity
     guid: b28c624fac0fc714db2d5e9825f4ce98
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
     path: Assets/Scenes/Control_Menu.unity
     guid: 4f8ef52a3169e1f46b89edcca8e0bc34
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Thabo level 1.unity
     guid: b091884daefe73848ad052dbc4e3471e
+  - enabled: 1
+    path: Assets/Scenes/Aphiwe1 Thabo1.unity
+    guid: 8239a8aa0052e4c4cb9532d97a91ea64
+  - enabled: 1
+    path: Assets/Scenes/Aphiwe2 Thabo2.unity
+    guid: 2a89550f6cb91bb4bb6721274d33ebc6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

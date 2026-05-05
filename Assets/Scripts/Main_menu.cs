@@ -6,6 +6,6 @@ public class Main_menu : MonoBehaviour
     [SerializeField] GameObject mainMenu; 
     public void PlayGame()
     {
-        SceneManager.LoadScene("Thabo level 1");
+        SceneManager.LoadScene("Aphiwe1 Thabo1");
     }
 }
