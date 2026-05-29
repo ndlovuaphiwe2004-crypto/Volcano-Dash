@@ -46,6 +46,8 @@ public class PlayerMovement : MonoBehaviour
     private AudioSource audioSource;
     private float footstepTimer = 0f;
 
+    // Added a reference to the CoinManager to handle coin collection
+    public CoinManager cm;
     void Start()
     {
         audioSource = GetComponent<AudioSource>();
@@ -406,5 +408,14 @@ public class PlayerMovement : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawLine(groundCheck.position, groundCheck.position + Vector3.down * groundCheckDistance);
         Gizmos.DrawWireSphere(groundCheck.position + Vector3.down * groundCheckDistance, 0.05f);
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("coin"))
+        {
+            Destroy(other.gameObject);
+            cm.coinCount++;
+        }
     }
 }
