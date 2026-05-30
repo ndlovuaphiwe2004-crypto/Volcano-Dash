@@ -8,6 +8,11 @@ public class Health : MonoBehaviour
     private int currentLives;
     public Slider healthBar;
 
+    // Just added
+    private bool isDead;
+    public GameOver gameOver;
+
+
     void Start()
     {
         currentLives = maxLives;
@@ -49,9 +54,11 @@ public class Health : MonoBehaviour
 
         Debug.Log("Lives: " + currentLives + "/" + maxLives);
 
-        if (currentLives <= 0)
+        // even here
+        if (currentLives <= 0 && !isDead)
         {
-            Die();
+            isDead = true;
+            gameOver.GameOverScreen();
         }
     }
 
