@@ -53983,7 +53983,6 @@ GameObject:
   - component: {fileID: 824385081}
   - component: {fileID: 824385080}
   - component: {fileID: 824385079}
-  - component: {fileID: 824385084}
   m_Layer: 0
   m_Name: Updated Fireball_0 (1)
   m_TagString: Untagged
@@ -54169,19 +54168,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -1.987, y: 0.031, z: -90.896}
---- !u!114 &824385084
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 824385078}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad7065ab2eaf4fb47aa61e4b03869c24, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Damage
-  damage: 1
 --- !u!1 &852745605
 GameObject:
   m_ObjectHideFlags: 0
@@ -54383,7 +54369,7 @@ Transform:
   m_GameObject: {fileID: 868758110}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.048, y: -0.064, z: 0}
+  m_LocalPosition: {x: 0.45987034, y: 0.021840096, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -54875,7 +54861,6 @@ GameObject:
   - component: {fileID: 1541767800}
   - component: {fileID: 1541767799}
   - component: {fileID: 1541767803}
-  - component: {fileID: 1541767804}
   m_Layer: 0
   m_Name: Updated Fireball_0
   m_TagString: Untagged
@@ -55061,19 +55046,6 @@ PolygonCollider2D:
       - {x: 0.3, y: 0.16666667}
       - {x: 0.23333335, y: 0.20000002}
   m_UseDelaunayMesh: 1
---- !u!114 &1541767804
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1541767798}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad7065ab2eaf4fb47aa61e4b03869c24, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Damage
-  damage: 1
 --- !u!1 &1692374081
 GameObject:
   m_ObjectHideFlags: 0
