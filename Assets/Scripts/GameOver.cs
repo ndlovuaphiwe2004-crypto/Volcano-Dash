@@ -31,6 +31,6 @@ public class GameOver : MonoBehaviour
     public void MainMenu()
     {
         Time.timeScale = 1f; // Resume before reload
-        SceneManager.LoadScene("Testing mainM");
+        SceneManager.LoadScene("Main_menu");
     }
 }
