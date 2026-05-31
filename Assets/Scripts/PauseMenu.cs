@@ -3,67 +3,31 @@ using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
-    [SerializeField] GameObject pausepanel;
-    private bool isPaused = false;
+    [SerializeField] GameObject pauseMenu;
 
-    void Start()
-    {
-        if (pausepanel == null)
-        {
-            Debug.LogError("Pause Menu Panel is not assigned! Please drag your pause menu UI into the script.");
-            return;
-        }
-
-        pausepanel.SetActive(false);
-        Time.timeScale = 1f;
-        Debug.Log("Pause menu initialized. Press Escape to pause.");
-    }
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Debug.Log("Escape key pressed!");
-
-            if (isPaused)
-            {
-                ResumeGame();
-            }
-            else
-            {
-                PauseGame();
-            }
-        }
-    }
 
     public void PauseGame()
     {
-        isPaused = true;
-        pausepanel.SetActive(true);
+        pauseMenu.SetActive(true);
         Time.timeScale = 0f;
-        Debug.Log("Game Paused");
     }
 
     public void ResumeGame()
     {
-        isPaused = false;
-        pausepanel.SetActive(false);
+        pauseMenu.SetActive(false);
         Time.timeScale = 1f;
-        Debug.Log("Game Resumed");
     }
 
     public void RestartLevel()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        Debug.Log("Restarting level");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void QuitToMainMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene("Main_Menu");
-        Debug.Log("Quitting to main menu");
+        SceneManager.LoadScene("Testing mainM");
     }
 
     public void QuitGame()

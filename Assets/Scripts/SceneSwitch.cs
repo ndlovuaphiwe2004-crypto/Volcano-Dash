@@ -25,6 +25,6 @@ public class SceneSwitch : MonoBehaviour
 
     public void LoadScene(string sceneName)
     {
-        SceneManager.LoadScene("Aphiwe2");
+        SceneManager.LoadScene(sceneName);
     }
 }

@@ -13,6 +13,10 @@ public class Health : MonoBehaviour
     [Header("Damage Flash")]
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private string flashTriggerName = "FlashRed";
+    // Just added
+    private bool isDead;
+    public GameOver gameOver;
+
 
     void Start()
     {
@@ -73,9 +77,11 @@ public class Health : MonoBehaviour
 
         Debug.Log("Lives: " + currentLives + "/" + maxLives);
 
-        if (currentLives <= 0)
+        // even here
+        if (currentLives <= 0 && !isDead)
         {
-            Die();
+            isDead = true;
+            gameOver.GameOverScreen();
         }
     }
 

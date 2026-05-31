@@ -3,76 +3,39 @@ using UnityEngine.UI;
 
 public class SoundManager : MonoBehaviour
 {
-    [SerializeField] Image soundOnIcon;
-    [SerializeField] Image soundOffIcon;
-    private bool muted = false;
+    [SerializeField] private Image soundOnIcon;
+    [SerializeField] private Image soundOffIcon;
+    private bool muted;
 
     void Start()
     {
-        if (!PlayerPrefs.HasKey("muted"))
-        {
-            PlayerPrefs.SetInt("muted", 0);
-            load();
-        }
-        else
-        {
-            load();
-        }
-
+        // Load saved mute state
+        muted = PlayerPrefs.GetInt("muted", 0) == 1;
+        ApplyMute();
         UpdateButtonIcon();
-        AudioListener.pause = muted;
     }
 
-    public void OnSoundToggle()
+    public void ToggleSound()
     {
-        if (muted == false)
-        {
-            muted = true;
-            AudioListener.pause = true;
-        }
+        // Flip mute state
+        muted = !muted;
+        PlayerPrefs.SetInt("muted", muted ? 1 : 0);
+        PlayerPrefs.Save();
 
-        else
-        {
-            muted = false;
-            AudioListener.pause = false;
-        }
-        save();
+        ApplyMute();
         UpdateButtonIcon();
     }
-    public void OffSoundToggle()
+
+    private void ApplyMute()
     {
-        if (muted == true)
-        {
-            muted = false ;
-            AudioListener.pause = false;
-        }
-        save();
-        UpdateButtonIcon();
+        // Only mute background music, not all sounds
+        BackgroundMusic bg = Object.FindFirstObjectByType<BackgroundMusic>();
+        if (bg != null) bg.ApplyMuteState();
     }
-
 
     private void UpdateButtonIcon()
     {
-        if (muted == false)
-        {
-            soundOnIcon.enabled = true;
-            soundOffIcon.enabled = false;
-        }
-        else
-        {
-            soundOnIcon.enabled = false;
-            soundOffIcon.enabled = true;
-        }
+        soundOnIcon.enabled = !muted;
+        soundOffIcon.enabled = muted;
     }
-
-    private void load()
-    {
-            muted = PlayerPrefs.GetInt("muted") == 1;
-    }
-
-    private void save()
-    {
-        PlayerPrefs.SetInt("muted", muted ? 1 : 0);
-        PlayerPrefs.Save();
-    }   
 }
