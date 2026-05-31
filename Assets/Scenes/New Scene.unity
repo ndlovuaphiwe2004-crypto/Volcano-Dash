@@ -293,7 +293,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3da7e92c6402a1542abec17d48f6f270, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
-  pausepanel: {fileID: 144587278}
+  pausepanel: {fileID: 0}
 --- !u!224 &144587281
 RectTransform:
   m_ObjectHideFlags: 0
@@ -54623,6 +54623,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxLives: 3
   healthBar: {fileID: 1549403237}
+  playerAnimator: {fileID: 0}
+  flashTriggerName: FlashRed
 --- !u!1 &623228261
 GameObject:
   m_ObjectHideFlags: 0
@@ -58434,7 +58436,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 1.8
+  orthographic size: 1
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -60109,6 +60111,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   maxLives: 3
   healthBar: {fileID: 1549403237}
+  playerAnimator: {fileID: 0}
+  flashTriggerName: FlashRed
 --- !u!114 &1549403237
 MonoBehaviour:
   m_ObjectHideFlags: 0

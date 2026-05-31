@@ -54349,19 +54349,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   speed: 2
   spriteRenderer: {fileID: 0}
+  animator: {fileID: 0}
   rigidBody: {fileID: 0}
   jumpForce: 3
-  doubleJumpForce: 4
-  maxJumps: 2
   groundCheck: {fileID: 0}
-  groundCheckRadius: 0.2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  groundCheckDistance: 0.3
   enableDash: 1
   dashingPower: 3
+  dashDuration: 0.35
   dashingCooldown: 0.5
   trailRenderer: {fileID: 0}
+  jumpSound: {fileID: 0}
+  dashSound: {fileID: 0}
+  runSounds: []
+  footstepInterval: 0.3
+  runAudioSource: {fileID: 0}
 --- !u!50 &1693469952
 Rigidbody2D:
   serializedVersion: 5
