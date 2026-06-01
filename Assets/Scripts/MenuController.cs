@@ -11,4 +11,13 @@ public class MenuController : MonoBehaviour
         // Load Scene 1 normally (replace with your scene name)
         SceneManager.LoadScene("SampleScene", LoadSceneMode.Single);
     }
+
+    public void ResetProgress()
+    {
+        PlayerPrefs.SetInt("UnlockedLevel", 1); // lock back to Level 1 only
+        PlayerPrefs.SetInt("ReachedIndex", 0);  // optional, if you use it
+        PlayerPrefs.Save();
+        Debug.Log("Progress reset. Only Level 1 unlocked.");
+    }
+
 }
