@@ -7,19 +7,19 @@ public class ObjectivePanel : MonoBehaviour
 {
     public GameObject objectivePanel;
     public TextMeshProUGUI levelText;        // "Level 1", "Level 2"
-    public TextMeshProUGUI descriptionText;  // The long sentence
+    public TextMeshProUGUI descriptionText; 
 
     // Coin requirement
     public Image coinIcon;
     public TextMeshProUGUI coinText;
 
-    // Gem requirement
+    /* Gem requirement
     public Image gemIcon;
     public TextMeshProUGUI gemText;
 
     // Scroll requirement
     public Image scrollIcon;
-    public TextMeshProUGUI scrollText;
+    public TextMeshProUGUI scrollText;*/
 
     public Button nextButton;
 
@@ -35,13 +35,13 @@ public class ObjectivePanel : MonoBehaviour
             descriptionText.text = "Level requirements: collect the following items to clear the level";
 
             coinIcon.gameObject.SetActive(true);
-            coinText.text = "×5";
+            coinText.text = "×18";
 
-            gemIcon.gameObject.SetActive(true);
+            /*gemIcon.gameObject.SetActive(true);
             gemText.text = "×3";
 
             scrollIcon.gameObject.SetActive(true);
-            scrollText.text = "×1";
+            scrollText.text = "×1";*/
         }
         else if (levelIndex == 5) // Level 2
         {
@@ -49,13 +49,13 @@ public class ObjectivePanel : MonoBehaviour
             descriptionText.text = "Level requirements: collect the following items to clear the level";
 
             coinIcon.gameObject.SetActive(true);
-            coinText.text = "×10";
+            coinText.text = "×12";
 
-            gemIcon.gameObject.SetActive(true);
+            /*gemIcon.gameObject.SetActive(true);
             gemText.text = "×5";
 
             scrollIcon.gameObject.SetActive(true);
-            scrollText.text = "×2";
+            scrollText.text = "×2";*/
         }
         else
         {
